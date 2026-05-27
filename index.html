@@ -12,7 +12,6 @@
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
         }
-        /* Custom scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
@@ -28,9 +27,28 @@
             background-color: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(2px);
         }
+
+        .sidebar-collapsed { width: 5.5rem !important; }
+        .sidebar-collapsed .nav-text, .sidebar-collapsed .logo-text, .sidebar-collapsed .user-info-text { display: none; }
+        .sidebar-collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
+        .sidebar-collapsed .logo-container { justify-content: center; padding-left: 0; padding-right: 0; }
+        .sidebar-collapsed .user-container { justify-content: center; padding: 0.5rem; }
+
+        /* Loader */
+        .loader {
+            border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%;
+            width: 24px; height: 24px; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="text-gray-800 h-screen overflow-hidden flex flex-col">
+<body class="text-gray-800 h-screen overflow-hidden flex flex-col relative">
+
+    <!-- GLOBAL LOADER -->
+    <div id="global-loader" class="fixed inset-0 z-[100] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center hidden">
+        <div class="loader mb-3"></div>
+        <p class="text-blue-600 font-semibold animate-pulse" id="loader-text">Loading...</p>
+    </div>
 
     <!-- LOGIN SCREEN -->
     <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-50 fade-in">
@@ -39,91 +57,103 @@
                 <i data-lucide="sparkles" class="w-10 h-10"></i>
             </div>
             <h1 class="text-2xl font-bold mb-2 text-gray-900">Housekeeping Portal</h1>
-            <p class="text-gray-500 mb-8">Sign in to manage tasks and logs</p>
+            <p class="text-gray-500 mb-8">Sign in with your credentials</p>
             
             <form id="login-form" class="space-y-4">
                 <div class="text-left">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Worker Name (Guest)</label>
-                    <input type="text" id="worker-name" required placeholder="e.g. John Doe" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Username / ID</label>
+                    <input type="text" id="username" required placeholder="e.g. admin" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
                 </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
-                    Start Shift
+                <div class="text-left">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="password" required placeholder="••••••••" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                </div>
+                <div id="login-error" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm text-left font-medium border border-red-100"></div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex justify-center items-center gap-2">
+                    Sign In
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- MAIN APP WRAPPER (Hidden initially) -->
+    <!-- MAIN APP WRAPPER -->
     <div id="main-app" class="hidden flex h-screen w-full">
         
-        <!-- SIDEBAR -->
-        <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 z-20">
-            <div class="p-6 flex items-center gap-3 border-b border-slate-800">
-                <i data-lucide="home" class="w-6 h-6 text-blue-400"></i>
-                <span class="font-bold text-white text-lg tracking-wide">HK Portal</span>
+        <aside id="sidebar" class="w-64 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 z-20 flex-shrink-0">
+            <div class="logo-container p-6 flex items-center justify-between border-b border-slate-800 transition-all">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <i data-lucide="home" class="w-6 h-6 text-blue-400 flex-shrink-0"></i>
+                    <span class="logo-text font-bold text-white text-lg tracking-wide whitespace-nowrap">HK Portal</span>
+                </div>
+                <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white transition-colors nav-text">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
             </div>
             
-            <div class="p-4">
-                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Logged in as</p>
-                <div class="flex items-center gap-2 text-white bg-slate-800 px-3 py-2 rounded-lg">
-                    <i data-lucide="user" class="w-4 h-4 text-emerald-400"></i>
-                    <span id="display-worker-name" class="font-medium truncate">Worker</span>
+            <div class="p-4 user-container transition-all">
+                <p class="user-info-text text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Logged in as</p>
+                <div class="flex flex-col gap-1 text-white bg-slate-800 px-3 py-2 rounded-lg">
+                    <div class="flex items-center gap-2 justify-center md:justify-start">
+                        <i data-lucide="user" class="w-4 h-4 text-emerald-400 flex-shrink-0"></i>
+                        <span id="display-worker-name" class="user-info-text font-medium truncate">User</span>
+                    </div>
+                    <span id="display-worker-role" class="user-info-text text-[10px] bg-slate-700 rounded px-1.5 py-0.5 inline-block w-fit text-slate-300 font-bold uppercase tracking-wider">Role</span>
                 </div>
             </div>
 
             <nav class="flex-1 px-4 py-4 space-y-2">
-                <button onclick="switchTab('today')" id="tab-today" class="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg bg-blue-600 text-white transition-colors">
-                    <i data-lucide="check-square" class="w-5 h-5"></i>
-                    <span class="font-medium">Today's Work</span>
+                <button onclick="switchTab('today')" id="tab-today" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg bg-blue-600 text-white transition-colors">
+                    <i data-lucide="check-square" class="w-5 h-5 flex-shrink-0"></i>
+                    <span class="nav-text font-medium whitespace-nowrap">Today's Work</span>
                 </button>
-                <button onclick="switchTab('admin')" id="tab-admin" class="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-slate-800 transition-colors">
-                    <i data-lucide="grid" class="w-5 h-5"></i>
-                    <span class="font-medium">Admin Panel</span>
+                <button onclick="switchTab('admin')" id="tab-admin" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-slate-800 transition-colors hidden">
+                    <i data-lucide="layout-grid" class="w-5 h-5 flex-shrink-0"></i>
+                    <span class="nav-text font-medium whitespace-nowrap">Add Room Card</span>
                 </button>
-                <button onclick="switchTab('reports')" id="tab-reports" class="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-slate-800 transition-colors">
-                    <i data-lucide="file-text" class="w-5 h-5"></i>
-                    <span class="font-medium">Monthly Reports</span>
+                <button onclick="switchTab('reports')" id="tab-reports" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-slate-800 transition-colors">
+                    <i data-lucide="file-text" class="w-5 h-5 flex-shrink-0"></i>
+                    <span class="nav-text font-medium whitespace-nowrap">Reports</span>
                 </button>
             </nav>
 
             <div class="p-4 border-t border-slate-800">
-                <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-red-500 hover:text-white transition-colors">
-                    <i data-lucide="log-out" class="w-5 h-5"></i>
-                    <span class="font-medium">Logout</span>
+                <button onclick="logout()" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-red-500 hover:text-white transition-colors">
+                    <i data-lucide="log-out" class="w-5 h-5 flex-shrink-0"></i>
+                    <span class="nav-text font-medium whitespace-nowrap">Logout</span>
                 </button>
             </div>
         </aside>
 
         <!-- MAIN CONTENT AREA -->
         <main class="flex-1 flex flex-col h-full bg-gray-50 overflow-hidden">
-            
-            <!-- HEADER -->
             <header class="bg-white border-b border-gray-200 px-8 py-5 flex justify-between items-center z-10 shadow-sm">
-                <h2 id="page-title" class="text-2xl font-bold text-gray-800">Today's Work</h2>
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleSidebar()" class="lg:hidden text-gray-500 hover:text-gray-800">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                    <h2 id="page-title" class="text-2xl font-bold text-gray-800">Today's Work</h2>
+                </div>
                 <div class="flex items-center gap-4 text-sm text-gray-600 font-medium" id="current-date-display">
-                    <!-- Date inserted here -->
+                    <!-- Date -->
                 </div>
             </header>
 
-            <!-- SCROLLABLE CONTENT -->
             <div class="flex-1 overflow-y-auto p-8 relative">
                 
                 <!-- VIEW 1: TODAY'S WORK -->
                 <div id="view-today" class="fade-in block">
-                    <div class="mb-6 flex justify-between items-end">
+                    <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                         <div>
-                            <h3 class="text-gray-500 font-medium mb-1">Tasks Pending</h3>
-                            <p class="text-gray-900 text-sm">Click a red box to mark it as complete (Green).</p>
+                            <h3 id="today-view-header" class="text-gray-500 font-medium mb-1">Tasks Pending for Today</h3>
+                            <p class="text-gray-900 text-sm">Tap a box to log a task completion.</p>
                         </div>
-                        <div class="flex gap-3 text-sm font-medium">
-                            <span class="flex items-center gap-1 text-red-600"><div class="w-3 h-3 rounded-full bg-red-100 border border-red-500"></div> Pending</span>
-                            <span class="flex items-center gap-1 text-emerald-600"><div class="w-3 h-3 rounded-full bg-emerald-100 border border-emerald-500"></div> Done</span>
+                        <div class="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1.5 shadow-sm">
+                            <span class="text-sm font-medium text-gray-600 pl-2">View Date:</span>
+                            <input type="date" id="dashboard-date-filter" class="px-2 py-1 text-sm outline-none text-gray-700 bg-transparent" onchange="changeDashboardDate()">
                         </div>
                     </div>
                     
-                    <div id="today-task-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        <!-- Today tasks rendered here -->
-                    </div>
+                    <div id="today-task-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
                     
                     <div id="no-tasks-today" class="hidden text-center py-20">
                         <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-500 mb-4">
@@ -134,395 +164,500 @@
                     </div>
                 </div>
 
-                <!-- VIEW 2: ADMIN PANEL (CALENDAR/PENDING) -->
+                <!-- VIEW 2: ADD ROOM CARD -->
                 <div id="view-admin" class="fade-in hidden">
                     <div class="mb-6 flex justify-between items-center">
                         <div>
-                            <h3 class="text-gray-500 font-medium mb-1">Task Management</h3>
-                            <p class="text-gray-900 text-sm">Add, edit, or delete facility tasks. Minimum 1 task required.</p>
+                            <h3 class="text-gray-500 font-medium mb-1">Room Management</h3>
+                            <p class="text-gray-900 text-sm">Add room cards and configure daily tasks inside them.</p>
                         </div>
-                        <button onclick="openTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2">
-                            <i data-lucide="plus" class="w-4 h-4"></i> Add Task
+                        <button onclick="openRoomModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Add Room
                         </button>
                     </div>
-
-                    <div id="admin-task-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        <!-- Admin tasks rendered here -->
-                    </div>
+                    <div id="admin-task-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
                 </div>
 
-                <!-- VIEW 3: REPORTS (LOGS) -->
+                <!-- VIEW 3: REPORTS -->
                 <div id="view-reports" class="fade-in hidden">
-                    <div class="mb-6">
-                        <h3 class="text-gray-500 font-medium mb-1">Activity Log</h3>
-                        <p class="text-gray-900 text-sm">Record of all completed housekeeping tasks.</p>
+                    <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h3 class="text-gray-500 font-medium mb-1">Activity Report</h3>
+                            <p class="text-gray-900 text-sm">Record of all completed housekeeping tasks.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
+                            <input type="date" id="report-date-filter" class="px-3 py-1.5 text-sm border-r border-gray-200 outline-none text-gray-700" onchange="filterReports()">
+                            <select id="report-range-filter" class="px-3 py-1.5 text-sm outline-none text-gray-700 bg-transparent" onchange="filterReports()">
+                                <option value="daily">Daily</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="quarterly">Quarterly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </div>
                     </div>
-
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse">
                                 <thead>
                                     <tr class="bg-gray-50 border-b border-gray-200">
+                                        <th class="px-6 py-4 font-semibold text-gray-700 text-sm">Room</th>
                                         <th class="px-6 py-4 font-semibold text-gray-700 text-sm">Task Name</th>
-                                        <th class="px-6 py-4 font-semibold text-gray-700 text-sm">Type</th>
                                         <th class="px-6 py-4 font-semibold text-gray-700 text-sm">Completed By</th>
                                         <th class="px-6 py-4 font-semibold text-gray-700 text-sm">Date & Time</th>
                                     </tr>
                                 </thead>
-                                <tbody id="reports-table-body" class="divide-y divide-gray-100">
-                                    <!-- Logs rendered here -->
-                                </tbody>
+                                <tbody id="reports-table-body" class="divide-y divide-gray-100"></tbody>
                             </table>
                         </div>
-                        <div id="no-logs" class="hidden text-center py-10 text-gray-500">
-                            No logs available yet.
-                        </div>
+                        <div id="no-logs" class="hidden text-center py-10 text-gray-500">No logs available for selected filter.</div>
                     </div>
                 </div>
-
             </div>
         </main>
     </div>
 
-    <!-- TASK MODAL (Add/Edit) -->
-    <div id="task-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay hidden">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+    <!-- MODALS -->
+    <div id="room-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
             <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 id="modal-title" class="text-lg font-bold text-gray-800">Add New Task</h3>
-                <button onclick="closeTaskModal()" class="text-gray-400 hover:text-gray-700 transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <h3 id="room-modal-title" class="text-lg font-bold text-gray-800">Add Room</h3>
+                <button onclick="closeRoomModal()" class="text-gray-400 hover:text-gray-700"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            
-            <form id="task-form" class="p-6 overflow-y-auto space-y-4">
-                <input type="hidden" id="task-id">
-                
+            <form id="room-form" class="p-6 space-y-4">
+                <input type="hidden" id="room-id">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Task Name</label>
-                    <input type="text" id="task-name" required placeholder="e.g. Clean Pool Area" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Room Name</label>
+                    <input type="text" id="room-name" required class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none">
                 </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Frequency (in Days)</label>
-                    <input type="number" id="task-frequency" required min="1" placeholder="e.g. 2 for every 2 days" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Task Category/Type</label>
-                    <select id="task-type" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none">
-                        <option value="Cleaning">Cleaning</option>
-                        <option value="Maintenance">Maintenance</option>
-                        <option value="Restock">Restock</option>
-                        <option value="Inspection">Inspection</option>
-                    </select>
-                </div>
-                
                 <div class="pt-4 flex gap-3">
-                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
-                        Save Task
-                    </button>
-                    <button type="button" id="btn-delete-task" onclick="deleteTask()" class="hidden bg-red-100 hover:bg-red-200 text-red-700 font-semibold py-2 px-4 rounded-lg transition-colors">
-                        Delete
-                    </button>
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg">Save</button>
+                    <button type="button" id="btn-delete-room" onclick="deleteRoom()" class="hidden bg-red-100 hover:bg-red-200 text-red-700 font-semibold py-2 px-4 rounded-lg">Delete</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- TOAST NOTIFICATION -->
-    <div id="toast" class="fixed bottom-6 right-6 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-y-20 opacity-0 z-50 flex items-center gap-3">
+    <div id="room-details-modal" class="fixed inset-0 z-40 flex items-center justify-center modal-overlay hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col m-4">
+            <div class="bg-blue-600 px-6 py-4 flex justify-between items-center text-white rounded-t-2xl">
+                <div>
+                    <span class="text-blue-200 text-sm font-semibold uppercase tracking-wider block mb-1">Room Details</span>
+                    <h3 id="detail-room-name" class="text-xl font-bold">Room Name</h3>
+                </div>
+                <button onclick="closeRoomDetailsModal()" class="text-white/80 hover:text-white bg-blue-700/50 p-2 rounded-lg"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h4 class="font-semibold text-gray-700">Tasks Required</h4>
+                <button onclick="openTaskModal()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-bold flex gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Add Task</button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 bg-white rounded-b-2xl">
+                <div id="room-tasks-list" class="space-y-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="task-modal" class="fixed inset-0 z-[60] flex items-center justify-center modal-overlay hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 id="modal-title" class="text-lg font-bold text-gray-800">Add Task</h3>
+                <button onclick="closeTaskModal()" class="text-gray-400 hover:text-gray-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="task-form" class="p-6 space-y-4">
+                <input type="hidden" id="task-id">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Task Name</label>
+                    <input type="text" id="task-name" required class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Times per Day</label>
+                        <input type="number" id="task-frequency" required min="1" value="1" class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Repeat Every (Days)</label>
+                        <input type="number" id="task-interval" required min="0" value="1" placeholder="0 = Only Once" class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                        <input type="date" id="task-start-date" required class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <select id="task-type" class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none">
+                            <option value="Cleaning">Cleaning</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Restock">Restock</option>
+                            <option value="Inspection">Inspection</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+                    <select id="task-assigned-to" required class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none">
+                        <!-- Options dynamically populated by JS -->
+                    </select>
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg">Save Task</button>
+                    <button type="button" id="btn-delete-task" onclick="deleteTask()" class="hidden bg-red-100 hover:bg-red-200 text-red-700 font-semibold py-2 px-4 rounded-lg">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-y-20 opacity-0 z-[70] flex items-center gap-3 pointer-events-none">
         <i data-lucide="info" class="w-5 h-5 text-blue-400"></i>
         <span id="toast-message" class="font-medium">Message</span>
     </div>
 
     <script>
-        // --- State Management ---
+        // ==========================================
+        // PASTE YOUR APPS SCRIPT WEB APP URL BELOW:
+        // ==========================================
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzXpfN0XtiUh_7_M4-58ynnjvRD324bxv-fo35cMH6UR39_D9llLr5LCLeFMOXZXQI/exec';
+        
         const State = {
-            currentUser: null,
+            user: null, // {username, role}
+            users: [], // List of registered users fetched from backend
             currentView: 'today',
-            // Generate some relative dates for dummy data to always look relevant
-            tasks: [],
-            logs: []
+            viewingDate: new Date(), // Tracks the date currently selected in the dashboard
+            rooms: [], // Reconstructed: { RoomID, RoomName, tasks: [] }
+            logs: [],
+            activeRoomId: null
         };
 
-        // Initialize mock data relative to today
-        function initMockData() {
-            const today = new Date();
-            const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
-            const threeDaysAgo = new Date(today); threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-            const fourDaysAgo = new Date(today); fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
-
-            State.tasks = [
-                { id: 1, name: "Lobby Deep Clean", frequencyDays: 2, type: "Cleaning", lastCompleted: threeDaysAgo.toISOString() }, // Overdue
-                { id: 2, name: "Restock Restrooms", frequencyDays: 1, type: "Restock", lastCompleted: yesterday.toISOString() }, // Due today
-                { id: 3, name: "Pool Maintenance", frequencyDays: 7, type: "Maintenance", lastCompleted: fourDaysAgo.toISOString() }, // Not due yet
-                { id: 4, name: "Corridor Vacuum", frequencyDays: 2, type: "Cleaning", lastCompleted: yesterday.toISOString() } // Due today/tomorrow depending on exact time
-            ];
-            
-            State.logs = [
-                { id: 101, taskId: 2, taskName: "Restock Restrooms", type: "Restock", completedBy: "Admin", completedAt: yesterday.toISOString() },
-                { id: 102, taskId: 4, taskName: "Corridor Vacuum", type: "Cleaning", completedBy: "Admin", completedAt: yesterday.toISOString() }
-            ];
-        }
-
-        // --- Utility Functions ---
-        const formatDate = (dateString) => {
-            const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' };
-            return new Date(dateString).toLocaleDateString(undefined, options);
+        // --- Loader Helpers ---
+        const toggleLoader = (show, text = 'Loading...') => {
+            const loader = document.getElementById('global-loader');
+            document.getElementById('loader-text').innerText = text;
+            if(show) loader.classList.remove('hidden');
+            else loader.classList.add('hidden');
         };
-
-        const getShortDate = (dateString) => {
-             return new Date(dateString).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-        }
 
         const showToast = (message) => {
             const toast = document.getElementById('toast');
             document.getElementById('toast-message').innerText = message;
             toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
         };
 
-        // Determine if a task is due or overdue
-        // Returns status object: { isDue: boolean, isOverdue: boolean, daysLate: number }
-        const checkTaskStatus = (task) => {
-            if (!task.lastCompleted) return { isDue: true, isOverdue: true, daysLate: 999 }; // Never done
+        // --- API Helpers ---
+        async function apiCall(data) {
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+                return await response.json();
+            } catch (error) {
+                console.error("API Error:", error);
+                alert("Network error connecting to database.");
+                return { success: false };
+            }
+        }
 
-            const lastDate = new Date(task.lastCompleted);
-            const nextDueDate = new Date(lastDate);
-            nextDueDate.setDate(nextDueDate.getDate() + parseInt(task.frequencyDays));
-            
-            const now = new Date();
-            // Reset times for pure date comparison
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const due = new Date(nextDueDate.getFullYear(), nextDueDate.getMonth(), nextDueDate.getDate());
-            
-            const diffTime = today.getTime() - due.getTime();
-            const daysDiff = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            return {
-                isDue: daysDiff >= 0,
-                isOverdue: daysDiff > 0,
-                daysLate: daysDiff
-            };
-        };
-
-        // --- Core UI Logic ---
-        
-        // Handle Login
-        document.getElementById('login-form').addEventListener('submit', (e) => {
+        // --- Authentication ---
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const name = document.getElementById('worker-name').value.trim();
-            if (name) {
-                State.currentUser = name;
-                document.getElementById('display-worker-name').innerText = name;
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value.trim();
+            const errEl = document.getElementById('login-error');
+            errEl.classList.add('hidden');
+
+            toggleLoader(true, 'Authenticating...');
+            const res = await apiCall({ action: 'login', username: u, password: p });
+            
+            if (res.success) {
+                State.user = res.user;
+                document.getElementById('display-worker-name').innerText = res.user.username;
+                document.getElementById('display-worker-role').innerText = res.user.role;
+                
+                // Hide Admin tabs if Worker
+                if (String(res.user.role).toLowerCase() === 'admin') {
+                    document.getElementById('tab-admin').classList.remove('hidden');
+                    document.getElementById('tab-reports').classList.remove('hidden');
+                } else {
+                    document.getElementById('tab-admin').classList.add('hidden');
+                    document.getElementById('tab-reports').classList.add('hidden');
+                }
+
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
-                initApp();
+                
+                await fetchAppData();
+            } else {
+                toggleLoader(false);
+                errEl.innerText = res.message || "Invalid credentials.";
+                errEl.classList.remove('hidden');
             }
         });
 
         const logout = () => {
-            State.currentUser = null;
-            document.getElementById('worker-name').value = '';
+            State.user = null;
+            document.getElementById('login-form').reset();
             document.getElementById('main-app').classList.add('hidden');
             document.getElementById('login-screen').classList.remove('hidden');
         };
 
-        // App Initialization
-        const initApp = () => {
-            initMockData();
+        // --- Fetch & Sync Data ---
+        const fetchAppData = async () => {
+            toggleLoader(true, 'Syncing Data...');
+            const res = await apiCall({ action: 'getData' });
             
-            // Set Header Date
+            if (res.success) {
+                State.users = res.users || [];
+                
+                // Reconstruct Rooms & Tasks
+                State.rooms = res.rooms.map(r => {
+                    return {
+                        id: r.RoomID,
+                        name: r.RoomName,
+                        tasks: res.tasks.filter(t => String(t.RoomID) === String(r.RoomID)).map(t => ({
+                            id: t.TaskID,
+                            name: t.TaskName,
+                            timesPerDay: parseInt(t.TimesPerDay) || 1,
+                            // Ensure 0 is preserved, fallback to 1 only if it's completely missing/invalid
+                            intervalDays: t.IntervalDays !== "" && !isNaN(t.IntervalDays) ? parseInt(t.IntervalDays) : 1,
+                            startDate: t.StartDate || new Date().toISOString().split('T')[0],
+                            type: t.TaskType,
+                            assignedTo: t.AssignedTo || '' // Parse new field
+                        }))
+                    };
+                });
+                
+                // Map Logs
+                State.logs = res.logs.map(l => {
+                    const room = State.rooms.find(r => String(r.id) === String(l.RoomID));
+                    let taskName = "Unknown Task";
+                    if(room) {
+                        const t = room.tasks.find(tk => String(tk.id) === String(l.TaskID));
+                        if(t) taskName = t.name;
+                    }
+                    return {
+                        id: l.LogID,
+                        roomId: l.RoomID,
+                        roomName: room ? room.name : "Unknown Room",
+                        taskId: l.TaskID,
+                        taskName: taskName,
+                        completedBy: l.CompletedBy,
+                        completedAt: l.CompletedAt
+                    };
+                });
+                
+                // Sort logs newest first
+                State.logs.sort((a,b) => new Date(b.completedAt) - new Date(a.completedAt));
+
+                initAppUI();
+            }
+            toggleLoader(false);
+        };
+
+        const initAppUI = () => {
             const now = new Date();
-            document.getElementById('current-date-display').innerHTML = `
-                <i data-lucide="calendar" class="w-4 h-4"></i>
-                ${now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            `;
+            document.getElementById('current-date-display').innerHTML = `<i data-lucide="calendar" class="w-4 h-4"></i> ${now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+            document.getElementById('report-date-filter').valueAsDate = new Date();
+            
+            // Set the dashboard view date picker
+            document.getElementById('dashboard-date-filter').valueAsDate = State.viewingDate;
             
             lucide.createIcons();
             switchTab('today');
         };
 
-        // Tab Switching Logic
+        const changeDashboardDate = () => {
+            const dateVal = document.getElementById('dashboard-date-filter').value;
+            
+            // Fix for Timezone shifting when picking dates
+            if (dateVal) {
+                const parts = dateVal.split('-');
+                // parts[0] = year, parts[1] = month (0-indexed in JS), parts[2] = day
+                State.viewingDate = new Date(parts[0], parts[1] - 1, parts[2]);
+            } else {
+                State.viewingDate = new Date();
+            }
+            
+            // Update the header text depending on if it's today or a past date
+            const isToday = new Date().toDateString() === State.viewingDate.toDateString();
+            document.getElementById('today-view-header').innerText = isToday ? "Tasks Pending for Today" : `Tasks Pending for ${State.viewingDate.toLocaleDateString()}`;
+            
+            renderTodayTasks();
+        };
+
+        // --- Utility ---
+        const toggleSidebar = () => document.getElementById('sidebar').classList.toggle('sidebar-collapsed');
+        const formatDate = (dateString) => new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+        
+        // Helper to check if two dates are the exact same day
+        const isSameDate = (date1, date2) => {
+            const d1 = new Date(date1); const d2 = new Date(date2);
+            return d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear();
+        };
+        
+        const getCompletionsOnDate = (taskId, targetDate) => State.logs.filter(log => String(log.taskId) === String(taskId) && isSameDate(log.completedAt, targetDate)).length;
+
+        // Logic to determine if task is due on a specific date based on IntervalDays & StartDate
+        const isTaskDueOnDate = (taskId, task, targetDate) => {
+            const target = new Date(targetDate);
+            target.setHours(0,0,0,0);
+
+            const start = new Date(task.startDate);
+            start.setHours(0,0,0,0);
+
+            // Task hasn't started yet relative to the viewed date
+            if (target < start) return false;
+
+            const intervalDays = task.intervalDays;
+            
+            // Logic for One-Time Tasks (Interval = 0)
+            if (intervalDays === 0) {
+                // Only due if the viewed date is EXACTLY the start date
+                return target.getTime() === start.getTime();
+            }
+
+            if (intervalDays === 1) return true; // Daily tasks are always due after their start date
+
+            // Look for logs strictly BEFORE the target date to find the last time it was completed
+            const pastLogs = State.logs.filter(log => {
+                const logDate = new Date(log.completedAt);
+                logDate.setHours(0,0,0,0);
+                return String(log.taskId) === String(taskId) && logDate < target;
+            });
+
+            if (pastLogs.length === 0) return true; // Never done before this date, so it's due
+            
+            // Sort by newest first to find the most recent time it was done
+            pastLogs.sort((a,b) => new Date(b.completedAt) - new Date(a.completedAt));
+            const latestPastLogDate = new Date(pastLogs[0].completedAt);
+            latestPastLogDate.setHours(0,0,0,0);
+            
+            // Check if enough days have passed since the last completion
+            const diffDays = Math.ceil(Math.abs(target - latestPastLogDate) / (1000 * 60 * 60 * 24));
+            return diffDays >= intervalDays;
+        };
+
+        // --- Navigation ---
         const switchTab = (tab) => {
             State.currentView = tab;
-            
-            // Update UI Tab Styles
             ['today', 'admin', 'reports'].forEach(t => {
                 const btn = document.getElementById(`tab-${t}`);
-                if (t === tab) {
-                    btn.classList.add('bg-blue-600', 'text-white');
-                    btn.classList.remove('hover:bg-slate-800');
-                } else {
-                    btn.classList.remove('bg-blue-600', 'text-white');
-                    btn.classList.add('hover:bg-slate-800');
+                if(btn) {
+                    if (t === tab) btn.classList.add('bg-blue-600', 'text-white');
+                    else btn.classList.remove('bg-blue-600', 'text-white');
                 }
                 document.getElementById(`view-${t}`).classList.add('hidden');
             });
-
-            // Show selected view
             document.getElementById(`view-${tab}`).classList.remove('hidden');
 
-            // Render content based on tab
-            if (tab === 'today') {
-                document.getElementById('page-title').innerText = "Today's Work";
-                renderTodayTasks();
-            } else if (tab === 'admin') {
-                document.getElementById('page-title').innerText = "Admin Dashboard";
-                renderAdminTasks();
-            } else if (tab === 'reports') {
-                document.getElementById('page-title').innerText = "Monthly Reports";
-                renderReports();
-            }
+            if (tab === 'today') { document.getElementById('page-title').innerText = "Today's Work"; renderTodayTasks(); }
+            if (tab === 'admin') { document.getElementById('page-title').innerText = "Add Room Card"; renderRoomCards(); }
+            if (tab === 'reports') { document.getElementById('page-title').innerText = "Reports"; filterReports(); }
         };
 
-        // --- Rendering Functions ---
-
-        // 1. Render Today's Dashboard
+        // --- Rendering UI ---
         const renderTodayTasks = () => {
             const grid = document.getElementById('today-task-grid');
             const noTasksEl = document.getElementById('no-tasks-today');
             grid.innerHTML = '';
-            
-            // Filter tasks that are due today or overdue
-            let pendingTasks = State.tasks.filter(task => checkTaskStatus(task).isDue);
-            
-            if (pendingTasks.length === 0) {
-                grid.classList.add('hidden');
-                noTasksEl.classList.remove('hidden');
-                return;
-            }
-            
-            grid.classList.remove('hidden');
-            noTasksEl.classList.add('hidden');
+            let hasPending = false;
 
-            // Sort so overdue is at top
-            pendingTasks.sort((a, b) => {
-                 const statA = checkTaskStatus(a);
-                 const statB = checkTaskStatus(b);
-                 if (statA.isOverdue && !statB.isOverdue) return -1;
-                 if (!statA.isOverdue && statB.isOverdue) return 1;
-                 return statB.daysLate - statA.daysLate;
+            State.rooms.forEach(room => {
+                room.tasks.forEach(task => {
+                    // Filter: Skip tasks not assigned to the logged-in worker (Admins see all)
+                    if (State.user.role.toLowerCase() !== 'admin' && String(task.assignedTo).toLowerCase() !== String(State.user.username).toLowerCase()) {
+                        return; // Skip this iteration
+                    }
+
+                    // Check if the task is due on the currently viewed date
+                    if (isTaskDueOnDate(task.id, task, State.viewingDate)) {
+                        const completions = getCompletionsOnDate(task.id, State.viewingDate);
+                        if (completions < task.timesPerDay) {
+                            hasPending = true;
+                            const card = document.createElement('div');
+                            card.className = `cursor-pointer transform transition-all duration-300 hover:scale-[1.02] border-2 rounded-xl p-5 border-amber-400 bg-amber-50`;
+                            card.onclick = () => logTaskComplete(room, task, card);
+                            card.innerHTML = `
+                                <div class="flex justify-between items-start mb-3">
+                                    <div>
+                                        <h4 class="font-bold text-lg text-amber-800 flex items-center flex-wrap gap-2">
+                                            ${task.name}
+                                            ${State.user.role.toLowerCase() === 'admin' ? `<span class="bg-amber-200 text-amber-900 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wide"><i data-lucide="user" class="w-3 h-3 inline"></i> ${task.assignedTo || 'Unassigned'}</span>` : ''}
+                                        </h4>
+                                        <p class="text-xs text-amber-700/70 font-semibold uppercase tracking-wider">${room.name}</p>
+                                    </div>
+                                    <span class="bg-amber-200 text-amber-800 text-xs px-2 py-1 rounded-md font-bold">${completions}/${task.timesPerDay} Done</span>
+                                </div>
+                                <div class="mt-4 pt-3 border-t border-amber-200 flex items-center justify-between">
+                                     <span class="text-xs font-semibold text-amber-700 opacity-70">Click to log</span>
+                                     <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm border border-amber-200">
+                                        <i data-lucide="check" class="w-4 h-4 text-amber-600 opacity-50"></i>
+                                     </div>
+                                </div>
+                            `;
+                            grid.appendChild(card);
+                        }
+                    }
+                });
             });
 
-            pendingTasks.forEach(task => {
-                const status = checkTaskStatus(task);
-                const isCompleted = false; // Initially in this view they are pending (Red)
-                
-                const card = document.createElement('div');
-                // Initial state: Red/Orange bordered box for pending
-                const borderClass = status.isOverdue ? 'border-red-400 bg-red-50' : 'border-amber-400 bg-amber-50';
-                const textClass = status.isOverdue ? 'text-red-700' : 'text-amber-700';
-                const badge = status.isOverdue 
-                    ? `<span class="bg-red-200 text-red-800 text-xs px-2 py-1 rounded-md font-bold uppercase tracking-wider shadow-sm">Overdue (${status.daysLate}d)</span>`
-                    : `<span class="bg-amber-200 text-amber-800 text-xs px-2 py-1 rounded-md font-bold shadow-sm">Due Today</span>`;
-                
-                card.className = `cursor-pointer transform transition-all duration-300 hover:scale-[1.02] hover:shadow-md border-2 rounded-xl p-5 ${borderClass}`;
-                
-                // Add click listener to mark complete
-                card.onclick = () => markTaskComplete(task.id, card);
-
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-3">
-                        <h4 class="font-bold text-lg ${textClass}">${task.name}</h4>
-                        ${badge}
-                    </div>
-                    <div class="space-y-2 mb-4">
-                        <div class="flex items-center text-sm ${textClass} opacity-80 gap-2">
-                            <i data-lucide="clock" class="w-4 h-4"></i> Every ${task.frequencyDays} days
-                        </div>
-                        <div class="flex items-center text-sm ${textClass} opacity-80 gap-2">
-                            <i data-lucide="tag" class="w-4 h-4"></i> ${task.type}
-                        </div>
-                    </div>
-                    <div class="mt-4 pt-3 border-t border-black/10 flex items-center justify-between">
-                         <span class="text-xs font-semibold ${textClass} opacity-70">Click box to mark as done</span>
-                         <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm border border-black/10">
-                            <i data-lucide="check" class="w-4 h-4 opacity-50"></i>
-                         </div>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
+            if (!hasPending) { grid.classList.add('hidden'); noTasksEl.classList.remove('hidden'); }
+            else { grid.classList.remove('hidden'); noTasksEl.classList.add('hidden'); }
             lucide.createIcons();
         };
 
-        // Action: Mark task complete (turns Green)
-        const markTaskComplete = (taskId, cardElement) => {
-            const taskIndex = State.tasks.findIndex(t => t.id === taskId);
-            if (taskIndex === -1) return;
-
-            const task = State.tasks[taskIndex];
-            const now = new Date().toISOString();
-            
-            // Visual transition to Green (Done)
+        const logTaskComplete = async (room, task, cardElement) => {
+            // Visual feedback first
             cardElement.className = `transform transition-all duration-500 border-2 rounded-xl p-5 border-emerald-400 bg-emerald-50 scale-95 opacity-50`;
-            cardElement.querySelector('h4').className = 'font-bold text-lg text-emerald-700 line-through';
             
-            const iconWrapper = cardElement.querySelector('.w-8');
-            if (iconWrapper) {
-                iconWrapper.classList.replace('bg-white', 'bg-emerald-500');
-                // Lucide transforms <i> into <svg>, so we need to check for either
-                const icon = iconWrapper.querySelector('svg') || iconWrapper.querySelector('i');
-                if (icon) {
-                    icon.classList.remove('opacity-50');
-                    icon.classList.add('text-white');
-                }
+            // Generate timestamp reflecting the currently viewed date
+            const now = new Date();
+            const viewDate = new Date(State.viewingDate);
+            if (!isSameDate(now, viewDate)) {
+                // If logging for a past date, use that date but append the current time so it's a valid timestamp
+                viewDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+            } else {
+                viewDate.setTime(now.getTime());
             }
-            
-            // Update Data
-            task.lastCompleted = now;
-            
-            // Add to Logs
-            State.logs.unshift({
-                id: Date.now(),
-                taskId: task.id,
-                taskName: task.name,
-                type: task.type,
-                completedBy: State.currentUser,
-                completedAt: now
-            });
 
-            showToast(`Task '${task.name}' marked complete.`);
+            const logEntry = {
+                LogID: "LOG_" + Date.now(), RoomID: room.id, TaskID: task.id, 
+                CompletedBy: State.user.username, CompletedAt: viewDate.toISOString()
+            };
 
-            // Remove card after animation
-            setTimeout(() => {
-                renderTodayTasks();
-            }, 600);
+            // API Call
+            const res = await apiCall({ action: 'addLog', log: logEntry });
+            if (res.success) {
+                // Update local state
+                State.logs.unshift({
+                    id: logEntry.LogID, roomId: room.id, roomName: room.name,
+                    taskId: task.id, taskName: task.name,
+                    completedBy: logEntry.CompletedBy, completedAt: logEntry.CompletedAt
+                });
+                showToast(`Recorded completion for '${task.name}'.`);
+                setTimeout(() => renderTodayTasks(), 300);
+            } else {
+                alert("Failed to save to database.");
+                renderTodayTasks(); // revert UI
+            }
         };
 
-
-        // 2. Render Admin Dashboard (Manage Boxes)
-        const renderAdminTasks = () => {
+        const renderRoomCards = () => {
             const grid = document.getElementById('admin-task-grid');
             grid.innerHTML = '';
-
-            State.tasks.forEach(task => {
-                const status = checkTaskStatus(task);
-                
-                let statusBadge = '';
-                if(status.isOverdue) statusBadge = '<span class="w-3 h-3 rounded-full bg-red-500 absolute -top-1 -right-1 shadow-sm border border-white"></span>';
-                else if(status.isDue) statusBadge = '<span class="w-3 h-3 rounded-full bg-amber-500 absolute -top-1 -right-1 shadow-sm border border-white"></span>';
-                else statusBadge = '<span class="w-3 h-3 rounded-full bg-emerald-500 absolute -top-1 -right-1 shadow-sm border border-white"></span>';
-
+            State.rooms.forEach(room => {
                 const card = document.createElement('div');
-                card.className = "bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer relative group";
-                card.onclick = () => openTaskModal(task);
-
+                card.className = "bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md cursor-pointer group flex flex-col justify-between min-h-[140px]";
+                card.onclick = () => openRoomDetailsModal(room);
                 card.innerHTML = `
-                    ${statusBadge}
-                    <div class="flex justify-between items-start mb-2">
-                        <h4 class="font-bold text-gray-800 text-lg group-hover:text-blue-600 transition-colors">${task.name}</h4>
-                        <button class="text-gray-400 hover:text-blue-600 transition-colors"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                    </div>
-                    <div class="text-sm text-gray-500 space-y-1 mb-4">
-                        <p class="flex items-center gap-2"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Auto-resets every ${task.frequencyDays} days</p>
-                        <p class="flex items-center gap-2"><i data-lucide="folder" class="w-3 h-3"></i> ${task.type}</p>
-                    </div>
-                    <div class="pt-3 border-t border-gray-100 flex justify-between text-xs text-gray-400">
-                        <span>Last done: ${task.lastCompleted ? getShortDate(task.lastCompleted) : 'Never'}</span>
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                                <i data-lucide="layout" class="w-5 h-5 text-gray-400"></i> ${room.name}
+                            </h4>
+                            <button onclick="event.stopPropagation(); openRoomModal('${room.id}')" class="text-gray-400 hover:text-blue-600 p-1 z-10"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">${room.tasks.length} tasks configured</p>
                     </div>
                 `;
                 grid.appendChild(card);
@@ -530,128 +665,223 @@
             lucide.createIcons();
         };
 
-        // 3. Render Reports
-        const renderReports = () => {
+        // --- Filtering Reports ---
+        const filterReports = () => {
+            const type = document.getElementById('report-range-filter').value;
+            const dateStr = document.getElementById('report-date-filter').value;
+            let filtered = [...State.logs];
+            
+            if (type === 'daily' && dateStr) {
+                const target = new Date(dateStr);
+                filtered = filtered.filter(l => {
+                    const d = new Date(l.completedAt);
+                    return d.getDate() === target.getDate() && d.getMonth() === target.getMonth() && d.getFullYear() === target.getFullYear();
+                });
+            } else if (type === 'monthly') {
+                const now = new Date();
+                filtered = filtered.filter(l => new Date(l.completedAt).getMonth() === now.getMonth() && new Date(l.completedAt).getFullYear() === now.getFullYear());
+            } else if (type === 'yearly') {
+                filtered = filtered.filter(l => new Date(l.completedAt).getFullYear() === new Date().getFullYear());
+            }
+            // Add Quarterly logic similarly if strictly needed...
+            
             const tbody = document.getElementById('reports-table-body');
             const noLogs = document.getElementById('no-logs');
             tbody.innerHTML = '';
 
-            if (State.logs.length === 0) {
-                tbody.parentElement.classList.add('hidden');
+            if (filtered.length === 0) {
+                tbody.parentElement.parentElement.classList.add('hidden');
                 noLogs.classList.remove('hidden');
                 return;
             }
 
-            tbody.parentElement.classList.remove('hidden');
+            tbody.parentElement.parentElement.classList.remove('hidden');
             noLogs.classList.add('hidden');
 
-            State.logs.forEach(log => {
+            filtered.forEach(log => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-50 transition-colors";
+                tr.className = "hover:bg-gray-50 border-b border-gray-100";
                 tr.innerHTML = `
-                    <td class="px-6 py-4 border-b border-gray-100 text-sm font-medium text-gray-900">${log.taskName}</td>
-                    <td class="px-6 py-4 border-b border-gray-100 text-sm text-gray-500">
-                        <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">${log.type}</span>
-                    </td>
-                    <td class="px-6 py-4 border-b border-gray-100 text-sm text-gray-600">
-                        <div class="flex items-center gap-2">
-                            <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs uppercase">
-                                ${log.completedBy.charAt(0)}
-                            </div>
-                            ${log.completedBy}
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 border-b border-gray-100 text-sm text-gray-500">${formatDate(log.completedAt)}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">${log.roomName}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">${log.taskName}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${log.completedBy}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">${formatDate(log.completedAt)}</td>
                 `;
                 tbody.appendChild(tr);
             });
         };
 
-        // --- Modal & Form Logic (Admin Add/Edit/Delete) ---
-
-        const modal = document.getElementById('task-modal');
-        const taskForm = document.getElementById('task-form');
-
-        const openTaskModal = (task = null) => {
-            const isEdit = !!task;
-            document.getElementById('modal-title').innerText = isEdit ? 'Edit Task Settings' : 'Add New Task';
-            
-            if (isEdit) {
-                document.getElementById('task-id').value = task.id;
-                document.getElementById('task-name').value = task.name;
-                document.getElementById('task-frequency').value = task.frequencyDays;
-                document.getElementById('task-type').value = task.type;
-                document.getElementById('btn-delete-task').classList.remove('hidden');
+        // --- Room Management API Calls ---
+        const openRoomModal = (roomId = null) => {
+            const room = roomId ? State.rooms.find(r => String(r.id) === String(roomId)) : null;
+            document.getElementById('room-modal-title').innerText = room ? 'Edit Room' : 'Add Room Card';
+            if (room) {
+                document.getElementById('room-id').value = room.id;
+                document.getElementById('room-name').value = room.name;
+                document.getElementById('btn-delete-room').classList.remove('hidden');
             } else {
-                taskForm.reset();
-                document.getElementById('task-id').value = '';
-                document.getElementById('btn-delete-task').classList.add('hidden');
+                document.getElementById('room-form').reset();
+                document.getElementById('room-id').value = '';
+                document.getElementById('btn-delete-room').classList.add('hidden');
             }
-
-            modal.classList.remove('hidden');
+            document.getElementById('room-modal').classList.remove('hidden');
         };
+        const closeRoomModal = () => document.getElementById('room-modal').classList.add('hidden');
 
-        const closeTaskModal = () => {
-            modal.classList.add('hidden');
-            taskForm.reset();
-        };
-
-        // Handle Add/Edit Save
-        taskForm.addEventListener('submit', (e) => {
+        document.getElementById('room-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const id = document.getElementById('task-id').value;
-            const name = document.getElementById('task-name').value.trim();
-            const frequencyDays = parseInt(document.getElementById('task-frequency').value);
-            const type = document.getElementById('task-type').value;
+            const id = document.getElementById('room-id').value;
+            const name = document.getElementById('room-name').value.trim();
+            const payload = { RoomID: id || "ROOM_" + Date.now(), RoomName: name };
 
-            if (id) {
-                // Edit
-                const index = State.tasks.findIndex(t => t.id == id);
-                if (index > -1) {
-                    State.tasks[index].name = name;
-                    State.tasks[index].frequencyDays = frequencyDays;
-                    State.tasks[index].type = type;
-                    showToast('Task updated successfully.');
-                }
-            } else {
-                // Add
-                State.tasks.push({
-                    id: Date.now(),
-                    name,
-                    frequencyDays,
-                    type,
-                    lastCompleted: null // Brand new task
-                });
-                showToast('New task created.');
+            toggleLoader(true, 'Saving...');
+            const res = await apiCall({ action: 'saveRoom', isEdit: !!id, room: payload });
+            if (res.success) {
+                await fetchAppData(); // Refresh all state
+                closeRoomModal();
+                showToast('Room saved.');
             }
-
-            closeTaskModal();
-            if(State.currentView === 'admin') renderAdminTasks();
+            toggleLoader(false);
         });
 
-        // Handle Delete (Min 1 requirement)
-        const deleteTask = () => {
-            const id = document.getElementById('task-id').value;
-            if (!id) return;
-
-            // Rule: Min - 1 box
-            if (State.tasks.length <= 1) {
-                alert("Cannot delete. Minimum 1 task must exist in the system.");
-                return;
+        const deleteRoom = async () => {
+            const id = document.getElementById('room-id').value;
+            if (!confirm("Delete this room and all its tasks from the database?")) return;
+            
+            toggleLoader(true, 'Deleting...');
+            const res = await apiCall({ action: 'deleteRoom', roomId: id });
+            if(res.success){
+                await fetchAppData();
+                closeRoomModal();
+                showToast('Room deleted.');
             }
-
-            if(confirm("Are you sure you want to delete this task?")) {
-                State.tasks = State.tasks.filter(t => t.id != id);
-                showToast('Task deleted.');
-                closeTaskModal();
-                if(State.currentView === 'admin') renderAdminTasks();
-            }
+            toggleLoader(false);
         };
 
-        // Initialize icons on load just in case (login screen)
-        lucide.createIcons();
+        // --- Room Details & Task Management API Calls ---
+        const openRoomDetailsModal = (room) => {
+            State.activeRoomId = room.id;
+            document.getElementById('detail-room-name').innerText = room.name;
+            renderTasksInsideRoom(room);
+            document.getElementById('room-details-modal').classList.remove('hidden');
+        };
+        const closeRoomDetailsModal = () => {
+            State.activeRoomId = null;
+            document.getElementById('room-details-modal').classList.add('hidden');
+            if(State.currentView === 'today') renderTodayTasks(); 
+            if(State.currentView === 'admin') renderRoomCards();
+        };
 
+        const renderTasksInsideRoom = (room) => {
+            const list = document.getElementById('room-tasks-list');
+            list.innerHTML = '';
+            if (room.tasks.length === 0) {
+                list.innerHTML = '<p class="text-gray-500 text-center py-4 border-2 border-dashed border-gray-200 rounded-xl">No tasks added to this room yet.</p>';
+                return;
+            }
+            room.tasks.forEach(task => {
+                const el = document.createElement('div');
+                el.className = "flex justify-between items-center bg-white border border-gray-200 p-4 rounded-xl shadow-sm";
+                el.innerHTML = `
+                    <div>
+                        <h5 class="font-bold text-gray-800">${task.name}</h5>
+                        <p class="text-sm text-gray-500 flex gap-4 mt-1 flex-wrap">
+                            <span>${task.timesPerDay}x/day</span>
+                            <span>Every ${task.intervalDays} day(s)</span>
+                            <span class="text-gray-400">|</span>
+                            <span>${task.type}</span>
+                            <span class="text-gray-400">|</span>
+                            <span><i data-lucide="user" class="w-3 h-3 inline"></i> ${task.assignedTo || 'Unassigned'}</span>
+                        </p>
+                    </div>
+                    <button onclick="openTaskModal('${task.id}')" class="text-gray-400 hover:text-blue-600 bg-gray-50 p-2 rounded-lg"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                `;
+                list.appendChild(el);
+            });
+            lucide.createIcons();
+        };
+
+        const openTaskModal = (taskId = null) => {
+            const room = State.rooms.find(r => String(r.id) === String(State.activeRoomId));
+            const task = taskId ? room.tasks.find(t => String(t.id) === String(taskId)) : null;
+            
+            // Populate the "Assigned To" Dropdown dynamically
+            const assignedSelect = document.getElementById('task-assigned-to');
+            assignedSelect.innerHTML = '<option value="">Select Worker...</option>';
+            State.users.filter(u => String(u.Role).toLowerCase() !== 'admin').forEach(u => {
+                assignedSelect.innerHTML += `<option value="${u.Username}">${u.Username}</option>`;
+            });
+
+            document.getElementById('modal-title').innerText = task ? 'Edit Task' : 'Add New Task';
+            if (task) {
+                document.getElementById('task-id').value = task.id;
+                document.getElementById('task-name').value = task.name;
+                document.getElementById('task-frequency').value = task.timesPerDay;
+                document.getElementById('task-interval').value = task.intervalDays;
+                
+                // Format the start date for the HTML date input
+                const sDate = task.startDate ? new Date(task.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+                document.getElementById('task-start-date').value = sDate;
+                
+                document.getElementById('task-type').value = task.type;
+                document.getElementById('task-assigned-to').value = task.assignedTo || '';
+                document.getElementById('btn-delete-task').classList.remove('hidden');
+            } else {
+                document.getElementById('task-form').reset();
+                document.getElementById('task-id').value = '';
+                document.getElementById('task-frequency').value = '1';
+                document.getElementById('task-interval').value = '1';
+                document.getElementById('task-start-date').value = new Date().toISOString().split('T')[0];
+                document.getElementById('task-assigned-to').value = '';
+                document.getElementById('btn-delete-task').classList.add('hidden');
+            }
+            document.getElementById('task-modal').classList.remove('hidden');
+        };
+        const closeTaskModal = () => document.getElementById('task-modal').classList.add('hidden');
+
+        document.getElementById('task-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('task-id').value;
+            const payload = {
+                TaskID: id || "TASK_" + Date.now(),
+                RoomID: State.activeRoomId,
+                TaskName: document.getElementById('task-name').value.trim(),
+                TimesPerDay: parseInt(document.getElementById('task-frequency').value),
+                IntervalDays: parseInt(document.getElementById('task-interval').value),
+                StartDate: document.getElementById('task-start-date').value,
+                TaskType: document.getElementById('task-type').value,
+                AssignedTo: document.getElementById('task-assigned-to').value
+            };
+
+            toggleLoader(true, 'Saving...');
+            const res = await apiCall({ action: 'saveTask', isEdit: !!id, task: payload });
+            if (res.success) {
+                await fetchAppData(); // Refresh all state
+                const updatedRoom = State.rooms.find(r => String(r.id) === String(State.activeRoomId));
+                renderTasksInsideRoom(updatedRoom);
+                closeTaskModal();
+                showToast('Task saved.');
+            }
+            toggleLoader(false);
+        });
+
+        const deleteTask = async () => {
+            const id = document.getElementById('task-id').value;
+            if (!confirm("Delete this task from the database?")) return;
+            
+            toggleLoader(true, 'Deleting...');
+            const res = await apiCall({ action: 'deleteTask', taskId: id });
+            if (res.success) {
+                await fetchAppData();
+                const updatedRoom = State.rooms.find(r => String(r.id) === String(State.activeRoomId));
+                renderTasksInsideRoom(updatedRoom);
+                closeTaskModal();
+                showToast('Task deleted.');
+            }
+            toggleLoader(false);
+        };
+        
+        lucide.createIcons();
     </script>
 </body>
 </html>
