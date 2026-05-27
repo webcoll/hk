@@ -35,6 +35,27 @@
         .sidebar-collapsed .logo-container { justify-content: center; padding-left: 0; padding-right: 0; }
         .sidebar-collapsed .user-container { justify-content: center; padding: 0.5rem; }
 
+        /* Shiny Hover Effect */
+        .shiny-effect {
+            position: relative;
+            overflow: hidden;
+        }
+        .shiny-effect::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-20deg);
+            transition: left 0.6s ease-in-out;
+            pointer-events: none; /* Prevents the shine from blocking clicks */
+        }
+        .shiny-effect:hover::after {
+            left: 150%;
+        }
+
         /* Loader */
         .loader {
             border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%;
@@ -70,7 +91,7 @@
                     <input type="password" id="password" required placeholder="••••••••" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
                 </div>
                 <div id="login-error" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm text-left font-medium border border-red-100"></div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex justify-center items-center gap-2">
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex justify-center items-center gap-2 shiny-effect">
                     Sign In
                 </button>
             </form>
@@ -177,7 +198,7 @@
                             <h3 class="text-gray-500 font-medium mb-1">Room Management</h3>
                             <p class="text-gray-900 text-sm">Add room cards and configure daily tasks inside them.</p>
                         </div>
-                        <button onclick="openRoomModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2">
+                        <button onclick="openRoomModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2 shiny-effect">
                             <i data-lucide="plus" class="w-4 h-4"></i> Add Room
                         </button>
                     </div>
@@ -254,7 +275,7 @@
             </div>
             <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <h4 class="font-semibold text-gray-700">Tasks Required</h4>
-                <button onclick="openTaskModal()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-bold flex gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Add Task</button>
+                <button onclick="openTaskModal()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-bold flex gap-2 shiny-effect"><i data-lucide="plus" class="w-4 h-4"></i> Add Task</button>
             </div>
             <div class="p-6 overflow-y-auto flex-1 bg-white rounded-b-2xl">
                 <div id="room-tasks-list" class="space-y-3"></div>
@@ -491,10 +512,9 @@
         const changeDashboardDate = () => {
             const dateVal = document.getElementById('dashboard-date-filter').value;
             
-            // Fix for Timezone shifting when picking dates
+            // Fix: Splitting the string explicitly prevents the Timezone Shift bug
             if (dateVal) {
                 const parts = dateVal.split('-');
-                // parts[0] = year, parts[1] = month (0-indexed in JS), parts[2] = day
                 State.viewingDate = new Date(parts[0], parts[1] - 1, parts[2]);
             } else {
                 State.viewingDate = new Date();
@@ -524,39 +544,38 @@
             const target = new Date(targetDate);
             target.setHours(0,0,0,0);
 
-            const start = new Date(task.startDate);
+            // Fix: Safely parse start date to avoid timezone shift bugs
+            let start;
+            if (typeof task.startDate === 'string' && task.startDate.includes('-')) {
+                const parts = task.startDate.split('T')[0].split('-');
+                start = new Date(parts[0], parts[1] - 1, parts[2]);
+            } else {
+                start = new Date(task.startDate);
+            }
             start.setHours(0,0,0,0);
 
             // Task hasn't started yet relative to the viewed date
             if (target < start) return false;
 
-            const intervalDays = task.intervalDays;
+            const intervalDays = parseInt(task.intervalDays) || 0;
             
             // Logic for One-Time Tasks (Interval = 0)
             if (intervalDays === 0) {
-                // Only due if the viewed date is EXACTLY the start date
                 return target.getTime() === start.getTime();
             }
 
             if (intervalDays === 1) return true; // Daily tasks are always due after their start date
 
-            // Look for logs strictly BEFORE the target date to find the last time it was completed
-            const pastLogs = State.logs.filter(log => {
-                const logDate = new Date(log.completedAt);
-                logDate.setHours(0,0,0,0);
-                return String(log.taskId) === String(taskId) && logDate < target;
-            });
-
-            if (pastLogs.length === 0) return true; // Never done before this date, so it's due
+            // STRICT SCHEDULE LOGIC: Based entirely on start date, ignoring past completion logs.
+            // We use Date.UTC to safely calculate exact day differences without Daylight Saving Time bugs
+            const utcTarget = Date.UTC(target.getFullYear(), target.getMonth(), target.getDate());
+            const utcStart = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
             
-            // Sort by newest first to find the most recent time it was done
-            pastLogs.sort((a,b) => new Date(b.completedAt) - new Date(a.completedAt));
-            const latestPastLogDate = new Date(pastLogs[0].completedAt);
-            latestPastLogDate.setHours(0,0,0,0);
+            // Fix: Math.round prevents random floating point precision errors causing off-by-one bugs
+            const diffDays = Math.round((utcTarget - utcStart) / (1000 * 60 * 60 * 24));
             
-            // Check if enough days have passed since the last completion
-            const diffDays = Math.ceil(Math.abs(target - latestPastLogDate) / (1000 * 60 * 60 * 24));
-            return diffDays >= intervalDays;
+            // Task is due if the exact number of days passed is a multiple of the interval
+            return diffDays % intervalDays === 0;
         };
 
         // --- Navigation ---
@@ -597,7 +616,8 @@
                         if (completions < task.timesPerDay) {
                             hasPending = true;
                             const card = document.createElement('div');
-                            card.className = `cursor-pointer transform transition-all duration-300 hover:scale-[1.02] border-2 rounded-xl p-5 border-amber-400 bg-amber-50`;
+                            // Added hover lift, larger shadow, and shiny-effect
+                            card.className = `cursor-pointer transform transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:shadow-lg border-2 rounded-xl p-5 border-amber-400 bg-amber-50 shiny-effect`;
                             card.onclick = () => logTaskComplete(room, task, card);
                             card.innerHTML = `
                                 <div class="flex justify-between items-start mb-3">
@@ -630,7 +650,7 @@
 
         const logTaskComplete = async (room, task, cardElement) => {
             // Visual feedback first
-            cardElement.className = `transform transition-all duration-500 border-2 rounded-xl p-5 border-emerald-400 bg-emerald-50 scale-95 opacity-50`;
+            cardElement.className = `transform transition-all duration-500 border-2 rounded-xl p-5 border-emerald-400 bg-emerald-50 scale-95 opacity-50 shiny-effect`;
             
             // Generate timestamp reflecting the currently viewed date
             const now = new Date();
@@ -669,7 +689,8 @@
             grid.innerHTML = '';
             State.rooms.forEach(room => {
                 const card = document.createElement('div');
-                card.className = "bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md cursor-pointer group flex flex-col justify-between min-h-[140px]";
+                // Added hover lift and shiny-effect
+                card.className = "bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer group flex flex-col justify-between min-h-[140px] shiny-effect";
                 card.onclick = () => openRoomDetailsModal(room);
                 card.innerHTML = `
                     <div>
