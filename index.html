@@ -96,7 +96,7 @@
             </div>
 
             <nav class="flex-1 px-4 py-4 space-y-2">
-                <button onclick="switchTab('today')" id="tab-today" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg bg-blue-600 text-white transition-colors">
+                <button onclick="switchTab('today')" id="tab-today" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg bg-blue-600 text-white transition-colors hidden worker-admin-only">
                     <i data-lucide="check-square" class="w-5 h-5 flex-shrink-0"></i>
                     <span class="nav-text font-medium whitespace-nowrap">Today's Work</span>
                 </button>
@@ -426,8 +426,6 @@
                         <select id="task-type" class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none">
                             <option value="Cleaning">Cleaning</option>
                             <option value="Maintenance">Maintenance</option>
-                            <option value="Restock">Restock</option>
-                            <option value="Inspection">Inspection</option>
                         </select>
                     </div>
                 </div>
@@ -513,13 +511,17 @@
                 const role = String(res.user.role).toLowerCase();
                 document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
                 document.querySelectorAll('.staff-admin-only').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.worker-admin-only').forEach(el => el.classList.add('hidden'));
                 
                 if (role === 'admin') {
                     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
                     document.querySelectorAll('.staff-admin-only').forEach(el => el.classList.remove('hidden'));
+                    document.querySelectorAll('.worker-admin-only').forEach(el => el.classList.remove('hidden'));
                 } else if (role === 'staff') { // Complaint User
                     document.querySelectorAll('.staff-admin-only').forEach(el => el.classList.remove('hidden'));
-                } // Worker sees default (Today's Work)
+                } else { // Worker sees default (Today's Work)
+                    document.querySelectorAll('.worker-admin-only').forEach(el => el.classList.remove('hidden'));
+                }
 
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
@@ -623,7 +625,13 @@
             document.getElementById('report-end-date').valueAsDate = now;
             
             lucide.createIcons();
-            switchTab('today');
+            
+            // Staff members default to tickets tab, everyone else to today tab
+            if (State.user.role.toLowerCase() === 'staff') {
+                switchTab('tickets');
+            } else {
+                switchTab('today');
+            }
         };
 
         const toggleSidebar = () => document.getElementById('sidebar').classList.toggle('sidebar-collapsed');
@@ -641,6 +649,17 @@
 
         const switchTab = (tab) => {
             State.currentView = tab;
+            
+            // Set dynamic page title
+            const titles = {
+                today: "Today's Work",
+                admin: "Add Room Card",
+                reports: "Activity Report",
+                tickets: "Helpdesk & Complaints",
+                users: "User Management"
+            };
+            document.getElementById('page-title').innerText = titles[tab] || "Dashboard";
+
             ['today', 'admin', 'reports', 'tickets', 'users'].forEach(t => {
                 const btn = document.getElementById(`tab-${t}`);
                 if(btn) btn.classList.toggle('bg-blue-600', t === tab);
@@ -698,7 +717,7 @@
             // Setup Subtext based on Role
             const role = State.user.role.toLowerCase();
             const subtext = document.getElementById('today-view-subtext');
-            if (role === 'staff') subtext.innerText = "Read-Only View. You do not have permission to log tasks.";
+            if (role !== 'admin') subtext.innerText = "Read-Only View. You do not have permission to log tasks.";
             else subtext.innerText = "Tap a box to log a task completion.";
 
             State.rooms.forEach(room => {
@@ -723,7 +742,7 @@
                             
                             card.className = `transform transition-all duration-300 hover:scale-[1.02] border-2 rounded-xl p-5 ${styleColors} shiny-effect relative overflow-hidden`;
                             
-                            if (role !== 'staff') {
+                            if (role === 'admin') {
                                 card.classList.add('cursor-pointer');
                                 card.onclick = () => logTaskComplete(room, task, card, isOverdue);
                             }
@@ -741,9 +760,9 @@
                                     <span class="${badgeColors} text-xs px-2 py-1 rounded-md font-bold mt-1">${completions}/${task.timesPerDay} Done</span>
                                 </div>
                                 <div class="mt-4 pt-3 border-t border-black/10 flex items-center justify-between">
-                                     <span class="text-xs font-semibold opacity-70">${role === 'staff' ? 'Read-Only' : 'Click to log'}</span>
+                                     <span class="text-xs font-semibold opacity-70">${role !== 'admin' ? 'Read-Only' : 'Click to log'}</span>
                                      <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm border border-black/10">
-                                        <i data-lucide="${role === 'staff' ? 'lock' : 'check'}" class="w-4 h-4 opacity-50"></i>
+                                        <i data-lucide="${role !== 'admin' ? 'lock' : 'check'}" class="w-4 h-4 opacity-50"></i>
                                      </div>
                                 </div>
                             `;
@@ -929,15 +948,20 @@
 
         // --- REPORTS & CSV ---
         const filterReports = () => {
-            const startStr = document.getElementById('report-start-date').value;
-            const endStr = document.getElementById('report-end-date').value;
             const worker = document.getElementById('report-worker-filter').value;
             
             let filtered = [...State.logs];
             
-            if (startStr && endStr) {
-                const s = new Date(startStr); s.setHours(0,0,0,0);
-                const e = new Date(endStr); e.setHours(23,59,59,999);
+            // If the calendar has dates selected
+            if (reportDatePicker && reportDatePicker.selectedDates.length > 0) {
+                const dates = reportDatePicker.selectedDates;
+                const s = new Date(dates[0]); 
+                s.setHours(0,0,0,0); // Start of range
+                
+                // If they only selected one day, end date is the same as start date
+                const e = new Date(dates.length === 2 ? dates[1] : dates[0]);
+                e.setHours(23,59,59,999); // End of range
+                
                 filtered = filtered.filter(l => {
                     const d = new Date(l.completedAt);
                     return d >= s && d <= e;
