@@ -8,59 +8,33 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
         
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .modal-overlay {
-            background-color: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(2px);
-        }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
 
         .sidebar-collapsed { width: 5.5rem !important; }
-        .sidebar-collapsed .nav-text, .sidebar-collapsed .logo-text, .sidebar-collapsed .user-info-text { display: none; }
+        .sidebar-collapsed .nav-text, .sidebar-collapsed .user-info-text { display: none; }
         .sidebar-collapsed .logo-branding { display: none; }
         .sidebar-collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
         .sidebar-collapsed .logo-container { justify-content: center; padding-left: 0; padding-right: 0; }
         .sidebar-collapsed .user-container { justify-content: center; padding: 0.5rem; }
 
-        /* Shiny Hover Effect */
-        .shiny-effect {
-            position: relative;
-            overflow: hidden;
-        }
+        .shiny-effect { position: relative; overflow: hidden; }
         .shiny-effect::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 50%;
-            height: 100%;
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
             background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
-            transform: skewX(-20deg);
-            transition: left 0.6s ease-in-out;
-            pointer-events: none; /* Prevents the shine from blocking clicks */
+            transform: skewX(-20deg); transition: left 0.6s ease-in-out; pointer-events: none;
         }
-        .shiny-effect:hover::after {
-            left: 150%;
-        }
+        .shiny-effect:hover::after { left: 150%; }
 
-        /* Loader */
-        .loader {
-            border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%;
-            width: 24px; height: 24px; animation: spin 1s linear infinite;
-        }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -91,9 +65,7 @@
                     <input type="password" id="password" required placeholder="••••••••" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
                 </div>
                 <div id="login-error" class="hidden bg-red-50 text-red-600 p-3 rounded-lg text-sm text-left font-medium border border-red-100"></div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex justify-center items-center gap-2 shiny-effect">
-                    Sign In
-                </button>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex justify-center items-center gap-2 shiny-effect">Sign In</button>
             </form>
         </div>
     </div>
@@ -128,13 +100,21 @@
                     <i data-lucide="check-square" class="w-5 h-5 flex-shrink-0"></i>
                     <span class="nav-text font-medium whitespace-nowrap">Today's Work</span>
                 </button>
-                <button onclick="switchTab('admin')" id="tab-admin" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-slate-800 transition-colors hidden">
+                <button onclick="switchTab('admin')" id="tab-admin" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-slate-800 transition-colors hidden admin-only">
                     <i data-lucide="layout-grid" class="w-5 h-5 flex-shrink-0"></i>
                     <span class="nav-text font-medium whitespace-nowrap">Add Room Card</span>
                 </button>
-                <button onclick="switchTab('reports')" id="tab-reports" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-slate-800 transition-colors">
+                <button onclick="switchTab('reports')" id="tab-reports" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-slate-800 transition-colors hidden admin-only">
                     <i data-lucide="file-text" class="w-5 h-5 flex-shrink-0"></i>
                     <span class="nav-text font-medium whitespace-nowrap">Reports</span>
+                </button>
+                <button onclick="switchTab('users')" id="tab-users" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-slate-800 transition-colors hidden admin-only">
+                    <i data-lucide="users" class="w-5 h-5 flex-shrink-0"></i>
+                    <span class="nav-text font-medium whitespace-nowrap">User Management</span>
+                </button>
+                <button onclick="switchTab('tickets')" id="tab-tickets" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg hover:bg-slate-800 transition-colors hidden staff-admin-only">
+                    <i data-lucide="ticket" class="w-5 h-5 flex-shrink-0"></i>
+                    <span class="nav-text font-medium whitespace-nowrap">Helpdesk Tickets</span>
                 </button>
             </nav>
 
@@ -150,18 +130,14 @@
         <main class="flex-1 flex flex-col h-full bg-gray-50 overflow-hidden">
             <header class="bg-white border-b border-gray-200 px-8 py-5 flex justify-between items-center z-10 shadow-sm">
                 <div class="flex items-center gap-4">
-                    <button onclick="toggleSidebar()" class="lg:hidden text-gray-500 hover:text-gray-800">
-                        <i data-lucide="menu" class="w-6 h-6"></i>
-                    </button>
+                    <button onclick="toggleSidebar()" class="lg:hidden text-gray-500 hover:text-gray-800"><i data-lucide="menu" class="w-6 h-6"></i></button>
                     <h2 id="page-title" class="text-2xl font-bold text-gray-800">Today's Work</h2>
                 </div>
                 <div class="flex items-center gap-4 text-sm text-gray-600 font-medium">
                     <button onclick="fetchAppData(true)" class="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-full transition-colors flex items-center justify-center shadow-sm border border-blue-100" title="Refresh Data">
                         <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                     </button>
-                    <div id="current-date-display" class="flex items-center gap-1">
-                        <!-- Date -->
-                    </div>
+                    <div id="current-date-display" class="flex items-center gap-1"></div>
                 </div>
             </header>
 
@@ -172,22 +148,21 @@
                     <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                         <div>
                             <h3 id="today-view-header" class="text-gray-500 font-medium mb-1">Tasks Pending for Today</h3>
-                            <p class="text-gray-900 text-sm">Tap a box to log a task completion.</p>
+                            <p id="today-view-subtext" class="text-gray-900 text-sm">Tap a box to log a task completion.</p>
                         </div>
-                        <div class="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1.5 shadow-sm">
-                            <span class="text-sm font-medium text-gray-600 pl-2">View Date:</span>
+                        <div class="flex flex-wrap items-center gap-2 bg-white border border-gray-200 rounded-lg p-1.5 shadow-sm">
+                            <select id="dashboard-worker-filter" class="px-2 py-1 text-sm outline-none text-gray-700 bg-transparent border-r border-gray-200" onchange="renderTodayTasks()">
+                                <option value="all">All Workers</option>
+                            </select>
+                            <span class="text-sm font-medium text-gray-600 pl-2">Date:</span>
                             <input type="date" id="dashboard-date-filter" class="px-2 py-1 text-sm outline-none text-gray-700 bg-transparent" onchange="changeDashboardDate()">
                         </div>
                     </div>
-                    
                     <div id="today-task-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
-                    
                     <div id="no-tasks-today" class="hidden text-center py-20">
-                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-500 mb-4">
-                            <i data-lucide="check-circle" class="w-8 h-8"></i>
-                        </div>
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-500 mb-4"><i data-lucide="check-circle" class="w-8 h-8"></i></div>
                         <h3 class="text-xl font-bold text-gray-800">All caught up!</h3>
-                        <p class="text-gray-500 mt-2">No pending tasks for today. Great job!</p>
+                        <p class="text-gray-500 mt-2">No pending tasks for selected filters.</p>
                     </div>
                 </div>
 
@@ -198,28 +173,27 @@
                             <h3 class="text-gray-500 font-medium mb-1">Room Management</h3>
                             <p class="text-gray-900 text-sm">Add room cards and configure daily tasks inside them.</p>
                         </div>
-                        <button onclick="openRoomModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2 shiny-effect">
-                            <i data-lucide="plus" class="w-4 h-4"></i> Add Room
-                        </button>
+                        <button onclick="openRoomModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2 shiny-effect"><i data-lucide="plus" class="w-4 h-4"></i> Add Room</button>
                     </div>
                     <div id="admin-task-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
                 </div>
 
                 <!-- VIEW 3: REPORTS -->
                 <div id="view-reports" class="fade-in hidden">
-                    <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="mb-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                         <div>
                             <h3 class="text-gray-500 font-medium mb-1">Activity Report</h3>
                             <p class="text-gray-900 text-sm">Record of all completed housekeeping tasks.</p>
                         </div>
-                        <div class="flex flex-wrap items-center gap-2 bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
-                            <input type="date" id="report-date-filter" class="px-3 py-1.5 text-sm border-r border-gray-200 outline-none text-gray-700" onchange="filterReports()">
-                            <select id="report-range-filter" class="px-3 py-1.5 text-sm outline-none text-gray-700 bg-transparent" onchange="filterReports()">
-                                <option value="daily">Daily</option>
-                                <option value="monthly">Monthly</option>
-                                <option value="quarterly">Quarterly</option>
-                                <option value="yearly">Yearly</option>
+                        <div class="flex flex-wrap items-center gap-2 bg-white border border-gray-200 rounded-lg p-1.5 shadow-sm">
+                            <span class="text-sm font-medium text-gray-500 pl-2">From</span>
+                            <input type="date" id="report-start-date" class="px-2 py-1 text-sm outline-none text-gray-700 bg-transparent border-r border-gray-200" onchange="filterReports()">
+                            <span class="text-sm font-medium text-gray-500 pl-2">To</span>
+                            <input type="date" id="report-end-date" class="px-2 py-1 text-sm outline-none text-gray-700 bg-transparent border-r border-gray-200" onchange="filterReports()">
+                            <select id="report-worker-filter" class="px-2 py-1 text-sm outline-none text-gray-700 bg-transparent border-r border-gray-200" onchange="filterReports()">
+                                <option value="all">All Workers</option>
                             </select>
+                            <button onclick="downloadCSV()" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-3 py-1 rounded text-sm font-bold flex items-center gap-1 transition-colors ml-1"><i data-lucide="download" class="w-4 h-4"></i> CSV</button>
                         </div>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -239,11 +213,146 @@
                         <div id="no-logs" class="hidden text-center py-10 text-gray-500">No logs available for selected filter.</div>
                     </div>
                 </div>
+
+                <!-- VIEW 4: TICKETS -->
+                <div id="view-tickets" class="fade-in hidden">
+                    <div class="mb-6 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-gray-500 font-medium mb-1">Helpdesk & Complaints</h3>
+                            <p class="text-gray-900 text-sm">Raise tickets for issues or track existing ones.</p>
+                        </div>
+                        <button onclick="openTicketModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2 shiny-effect"><i data-lucide="plus" class="w-4 h-4"></i> Raise Ticket</button>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b border-gray-200">
+                                        <th class="px-6 py-4 font-semibold text-gray-700 text-sm">Date</th>
+                                        <th class="px-6 py-4 font-semibold text-gray-700 text-sm">Raised By</th>
+                                        <th class="px-6 py-4 font-semibold text-gray-700 text-sm">Location</th>
+                                        <th class="px-6 py-4 font-semibold text-gray-700 text-sm">Remarks</th>
+                                        <th class="px-6 py-4 font-semibold text-gray-700 text-sm">Status</th>
+                                        <th class="px-6 py-4 font-semibold text-gray-700 text-sm">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tickets-table-body" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                        <div id="no-tickets" class="hidden text-center py-10 text-gray-500">No tickets found.</div>
+                    </div>
+                </div>
+
+                <!-- VIEW 5: USER MANAGEMENT -->
+                <div id="view-users" class="fade-in hidden">
+                    <div class="mb-6 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-gray-500 font-medium mb-1">User Management</h3>
+                            <p class="text-gray-900 text-sm">Create and manage portal access.</p>
+                        </div>
+                        <button onclick="openUserModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2 shiny-effect"><i data-lucide="plus" class="w-4 h-4"></i> Add User</button>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 border-b border-gray-200">
+                                    <th class="px-6 py-4 font-semibold text-gray-700 text-sm">Username</th>
+                                    <th class="px-6 py-4 font-semibold text-gray-700 text-sm">Role</th>
+                                    <th class="px-6 py-4 font-semibold text-gray-700 text-sm">Department</th>
+                                    <th class="px-6 py-4 font-semibold text-gray-700 text-sm">Cabin No</th>
+                                    <th class="px-6 py-4 font-semibold text-gray-700 text-sm text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body" class="divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
 
     <!-- MODALS -->
+    
+    <!-- Ticket Modal -->
+    <div id="ticket-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800">Raise Ticket</h3>
+                <button onclick="closeTicketModal()" class="text-gray-400 hover:text-gray-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="ticket-form" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input type="text" id="ticket-name" required readonly class="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-50 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                        <input type="text" id="ticket-dept" required readonly class="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-50 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cabin / Class No</label>
+                        <input type="text" id="ticket-cabin" required readonly class="w-full px-4 py-2 rounded-lg border border-gray-300 bg-gray-50 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Issue Photo (Optional)</label>
+                    <input type="file" id="ticket-photo" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Remarks / Issue Details</label>
+                    <textarea id="ticket-remarks" required rows="3" class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none resize-none"></textarea>
+                </div>
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg">Submit Ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div id="user-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800">Add New User</h3>
+                <button onclick="closeUserModal()" class="text-gray-400 hover:text-gray-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="user-form" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Username (Login ID)</label>
+                    <input type="text" id="new-username" required class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="text" id="new-password" required class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <select id="new-role" class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none">
+                        <option value="Worker">Worker User (Tasks Only)</option>
+                        <option value="Staff">Complaint User (Tickets Only)</option>
+                        <option value="Admin">Admin (Full Access)</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                        <input type="text" id="new-dept" placeholder="Optional" class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cabin No</label>
+                        <input type="text" id="new-cabin" placeholder="Optional" class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none">
+                    </div>
+                </div>
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Room Modal -->
     <div id="room-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay hidden">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
             <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
@@ -264,6 +373,7 @@
         </div>
     </div>
 
+    <!-- Room Details Modal -->
     <div id="room-details-modal" class="fixed inset-0 z-40 flex items-center justify-center modal-overlay hidden">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col m-4">
             <div class="bg-blue-600 px-6 py-4 flex justify-between items-center text-white rounded-t-2xl">
@@ -283,6 +393,7 @@
         </div>
     </div>
 
+    <!-- Task Modal -->
     <div id="task-modal" class="fixed inset-0 z-[60] flex items-center justify-center modal-overlay hidden">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
             <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
@@ -302,7 +413,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Repeat Every (Days)</label>
-                        <input type="number" id="task-interval" required min="0" value="1" placeholder="0 = Only Once" class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none">
+                        <input type="number" id="task-interval" required min="0" value="1" placeholder="0 = Once" class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -323,7 +434,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
                     <select id="task-assigned-to" required class="w-full px-4 py-2 rounded-lg border border-gray-300 outline-none">
-                        <!-- Options dynamically populated by JS -->
+                        <!-- Populated dynamically -->
                     </select>
                 </div>
                 <div class="pt-4 flex gap-3">
@@ -334,6 +445,7 @@
         </div>
     </div>
 
+    <!-- Toast -->
     <div id="toast" class="fixed bottom-6 right-6 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-y-20 opacity-0 z-[70] flex items-center gap-3 pointer-events-none">
         <i data-lucide="info" class="w-5 h-5 text-blue-400"></i>
         <span id="toast-message" class="font-medium">Message</span>
@@ -343,19 +455,19 @@
         // ==========================================
         // PASTE YOUR APPS SCRIPT WEB APP URL BELOW:
         // ==========================================
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzXpfN0XtiUh_7_M4-58ynnjvRD324bxv-fo35cMH6UR39_D9llLr5LCLeFMOXZXQI/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwrdKhopuZCTMfnd_hFEmnvJb3Gn8Dgn40I1Hek5_qDMXijImgXV6rumizbMKzI5d7S/exec';
         
         const State = {
-            user: null, // {username, role}
-            users: [], // List of registered users fetched from backend
+            user: null, 
+            users: [], 
             currentView: 'today',
-            viewingDate: new Date(), // Tracks the date currently selected in the dashboard
-            rooms: [], // Reconstructed: { RoomID, RoomName, tasks: [] }
+            viewingDate: new Date(), 
+            rooms: [], 
             logs: [],
+            tickets: [],
             activeRoomId: null
         };
 
-        // --- Loader Helpers ---
         const toggleLoader = (show, text = 'Loading...') => {
             const loader = document.getElementById('global-loader');
             document.getElementById('loader-text').innerText = text;
@@ -370,13 +482,9 @@
             setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
         };
 
-        // --- API Helpers ---
         async function apiCall(data) {
             try {
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(data)
-                });
+                const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(data) });
                 return await response.json();
             } catch (error) {
                 console.error("API Error:", error);
@@ -385,7 +493,7 @@
             }
         }
 
-        // --- Authentication ---
+        // --- AUTH & SETUP ---
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const u = document.getElementById('username').value.trim();
@@ -401,14 +509,17 @@
                 document.getElementById('display-worker-name').innerText = res.user.username;
                 document.getElementById('display-worker-role').innerText = res.user.role;
                 
-                // Hide Admin tabs if Worker
-                if (String(res.user.role).toLowerCase() === 'admin') {
-                    document.getElementById('tab-admin').classList.remove('hidden');
-                    document.getElementById('tab-reports').classList.remove('hidden');
-                } else {
-                    document.getElementById('tab-admin').classList.add('hidden');
-                    document.getElementById('tab-reports').classList.add('hidden');
-                }
+                // Hide/Show Tabs based on Role
+                const role = String(res.user.role).toLowerCase();
+                document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.staff-admin-only').forEach(el => el.classList.add('hidden'));
+                
+                if (role === 'admin') {
+                    document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+                    document.querySelectorAll('.staff-admin-only').forEach(el => el.classList.remove('hidden'));
+                } else if (role === 'staff') { // Complaint User
+                    document.querySelectorAll('.staff-admin-only').forEach(el => el.classList.remove('hidden'));
+                } // Worker sees default (Today's Work)
 
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
@@ -428,33 +539,28 @@
             document.getElementById('login-screen').classList.remove('hidden');
         };
 
-        // --- Fetch & Sync Data ---
         const fetchAppData = async (isRefresh = false) => {
             toggleLoader(true, isRefresh ? 'Refreshing Data...' : 'Syncing Data...');
             const res = await apiCall({ action: 'getData' });
             
             if (res.success) {
                 State.users = res.users || [];
+                State.tickets = res.tickets || [];
                 
-                // Reconstruct Rooms & Tasks
                 State.rooms = res.rooms.map(r => {
                     return {
                         id: r.RoomID,
                         name: r.RoomName,
                         tasks: res.tasks.filter(t => String(t.RoomID) === String(r.RoomID)).map(t => ({
-                            id: t.TaskID,
-                            name: t.TaskName,
+                            id: t.TaskID, name: t.TaskName,
                             timesPerDay: parseInt(t.TimesPerDay) || 1,
-                            // Ensure 0 is preserved, fallback to 1 only if it's completely missing/invalid
                             intervalDays: t.IntervalDays !== "" && !isNaN(t.IntervalDays) ? parseInt(t.IntervalDays) : 1,
                             startDate: t.StartDate || new Date().toISOString().split('T')[0],
-                            type: t.TaskType,
-                            assignedTo: t.AssignedTo || '' // Parse new field
+                            type: t.TaskType, assignedTo: t.AssignedTo || ''
                         }))
                     };
                 });
                 
-                // Map Logs
                 State.logs = res.logs.map(l => {
                     const room = State.rooms.find(r => String(r.id) === String(l.RoomID));
                     let taskName = "Unknown Task";
@@ -463,177 +569,181 @@
                         if(t) taskName = t.name;
                     }
                     return {
-                        id: l.LogID,
-                        roomId: l.RoomID,
-                        roomName: room ? room.name : "Unknown Room",
-                        taskId: l.TaskID,
-                        taskName: taskName,
-                        completedBy: l.CompletedBy,
-                        completedAt: l.CompletedAt
+                        id: l.LogID, roomId: l.RoomID, roomName: room ? room.name : "Unknown Room",
+                        taskId: l.TaskID, taskName: taskName, completedBy: l.CompletedBy, completedAt: l.CompletedAt
                     };
                 });
                 
-                // Sort logs newest first
                 State.logs.sort((a,b) => new Date(b.completedAt) - new Date(a.completedAt));
+                State.tickets.sort((a,b) => new Date(b.CreatedAt) - new Date(a.CreatedAt));
+
+                populateFilters();
 
                 if (isRefresh) {
-                    // Update current view without resetting the app state completely
                     if (State.currentView === 'today') renderTodayTasks();
                     if (State.currentView === 'admin') renderRoomCards();
                     if (State.currentView === 'reports') filterReports();
-                    
-                    // If room details modal is open, refresh its content too
-                    if (State.activeRoomId && !document.getElementById('room-details-modal').classList.contains('hidden')) {
-                        const updatedRoom = State.rooms.find(r => String(r.id) === String(State.activeRoomId));
-                        if (updatedRoom) renderTasksInsideRoom(updatedRoom);
-                    }
-                    showToast('Data refreshed successfully.');
+                    if (State.currentView === 'tickets') renderTickets();
+                    if (State.currentView === 'users') renderUsers();
+                    showToast('Data refreshed.');
                 } else {
                     initAppUI();
                 }
-            } else if (isRefresh) {
-                showToast('Failed to refresh data.');
             }
             toggleLoader(false);
         };
 
+        const populateFilters = () => {
+            const workers = State.users.filter(u => u.Role.toLowerCase() === 'worker' || u.Role.toLowerCase() === 'admin');
+            const dashFilter = document.getElementById('dashboard-worker-filter');
+            const reportFilter = document.getElementById('report-worker-filter');
+            
+            let optionsHTML = '<option value="all">All Workers</option>';
+            workers.forEach(w => { optionsHTML += `<option value="${w.Username}">${w.Username}</option>`; });
+            
+            dashFilter.innerHTML = optionsHTML;
+            reportFilter.innerHTML = optionsHTML;
+
+            // Auto-select worker in dashboard if not Admin
+            if(State.user.role.toLowerCase() === 'worker') {
+                dashFilter.value = State.user.username;
+                dashFilter.disabled = true; // Lock it
+            }
+        };
+
         const initAppUI = () => {
             const now = new Date();
-            document.getElementById('current-date-display').innerHTML = `<i data-lucide="calendar" class="w-4 h-4"></i> ${now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
-            document.getElementById('report-date-filter').valueAsDate = new Date();
+            document.getElementById('current-date-display').innerHTML = `<i data-lucide="calendar" class="w-4 h-4"></i> ${now.toLocaleDateString()}`;
             
-            // Set the dashboard view date picker
+            // Set Default Dates
             document.getElementById('dashboard-date-filter').valueAsDate = State.viewingDate;
+            
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            document.getElementById('report-start-date').valueAsDate = firstDay;
+            document.getElementById('report-end-date').valueAsDate = now;
             
             lucide.createIcons();
             switchTab('today');
         };
 
+        const toggleSidebar = () => document.getElementById('sidebar').classList.toggle('sidebar-collapsed');
+        const formatDate = (dateString) => new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+        const isSameDate = (d1, d2) => { const a = new Date(d1); const b = new Date(d2); return a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear(); };
+
         const changeDashboardDate = () => {
             const dateVal = document.getElementById('dashboard-date-filter').value;
-            
-            // Fix: Splitting the string explicitly prevents the Timezone Shift bug
             if (dateVal) {
                 const parts = dateVal.split('-');
                 State.viewingDate = new Date(parts[0], parts[1] - 1, parts[2]);
-            } else {
-                State.viewingDate = new Date();
-            }
-            
-            // Update the header text depending on if it's today or a past date
-            const isToday = new Date().toDateString() === State.viewingDate.toDateString();
-            document.getElementById('today-view-header').innerText = isToday ? "Tasks Pending for Today" : `Tasks Pending for ${State.viewingDate.toLocaleDateString()}`;
-            
+            } else { State.viewingDate = new Date(); }
             renderTodayTasks();
         };
 
-        // --- Utility ---
-        const toggleSidebar = () => document.getElementById('sidebar').classList.toggle('sidebar-collapsed');
-        const formatDate = (dateString) => new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
-        
-        // Helper to check if two dates are the exact same day
-        const isSameDate = (date1, date2) => {
-            const d1 = new Date(date1); const d2 = new Date(date2);
-            return d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear();
-        };
-        
-        const getCompletionsOnDate = (taskId, targetDate) => State.logs.filter(log => String(log.taskId) === String(taskId) && isSameDate(log.completedAt, targetDate)).length;
-
-        // Logic to determine if task is due on a specific date based on IntervalDays & StartDate
-        const isTaskDueOnDate = (taskId, task, targetDate) => {
-            const target = new Date(targetDate);
-            target.setHours(0,0,0,0);
-
-            // Fix: Safely parse start date to avoid timezone shift bugs
-            let start;
-            if (typeof task.startDate === 'string' && task.startDate.includes('-')) {
-                const parts = task.startDate.split('T')[0].split('-');
-                start = new Date(parts[0], parts[1] - 1, parts[2]);
-            } else {
-                start = new Date(task.startDate);
-            }
-            start.setHours(0,0,0,0);
-
-            // Task hasn't started yet relative to the viewed date
-            if (target < start) return false;
-
-            const intervalDays = parseInt(task.intervalDays) || 0;
-            
-            // Logic for One-Time Tasks (Interval = 0)
-            if (intervalDays === 0) {
-                return target.getTime() === start.getTime();
-            }
-
-            if (intervalDays === 1) return true; // Daily tasks are always due after their start date
-
-            // STRICT SCHEDULE LOGIC: Based entirely on start date, ignoring past completion logs.
-            // We use Date.UTC to safely calculate exact day differences without Daylight Saving Time bugs
-            const utcTarget = Date.UTC(target.getFullYear(), target.getMonth(), target.getDate());
-            const utcStart = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
-            
-            // Fix: Math.round prevents random floating point precision errors causing off-by-one bugs
-            const diffDays = Math.round((utcTarget - utcStart) / (1000 * 60 * 60 * 24));
-            
-            // Task is due if the exact number of days passed is a multiple of the interval
-            return diffDays % intervalDays === 0;
-        };
-
-        // --- Navigation ---
         const switchTab = (tab) => {
             State.currentView = tab;
-            ['today', 'admin', 'reports'].forEach(t => {
+            ['today', 'admin', 'reports', 'tickets', 'users'].forEach(t => {
                 const btn = document.getElementById(`tab-${t}`);
-                if(btn) {
-                    if (t === tab) btn.classList.add('bg-blue-600', 'text-white');
-                    else btn.classList.remove('bg-blue-600', 'text-white');
-                }
+                if(btn) btn.classList.toggle('bg-blue-600', t === tab);
+                if(btn) btn.classList.toggle('text-white', t === tab);
                 document.getElementById(`view-${t}`).classList.add('hidden');
             });
             document.getElementById(`view-${tab}`).classList.remove('hidden');
 
-            if (tab === 'today') { document.getElementById('page-title').innerText = "Today's Work"; renderTodayTasks(); }
-            if (tab === 'admin') { document.getElementById('page-title').innerText = "Add Room Card"; renderRoomCards(); }
-            if (tab === 'reports') { document.getElementById('page-title').innerText = "Reports"; filterReports(); }
+            if (tab === 'today') renderTodayTasks();
+            if (tab === 'admin') renderRoomCards();
+            if (tab === 'reports') filterReports();
+            if (tab === 'tickets') renderTickets();
+            if (tab === 'users') renderUsers();
         };
 
-        // --- Rendering UI ---
+        // --- SCHEDULING LOGIC ---
+        const isTaskDueOnDate = (task, targetDate) => {
+            const target = new Date(targetDate); target.setHours(0,0,0,0);
+            
+            let start;
+            if (task.startDate && task.startDate.includes('-')) {
+                const p = task.startDate.split('T')[0].split('-');
+                start = new Date(p[0], p[1] - 1, p[2]);
+            } else { start = new Date(task.startDate); }
+            start.setHours(0,0,0,0);
+
+            if (target < start) return false;
+            
+            const interval = task.intervalDays;
+            if (interval === 0) return target.getTime() === start.getTime(); // Once
+            if (interval === 1) return true; // Daily
+
+            const diff = Math.round((Date.UTC(target.getFullYear(), target.getMonth(), target.getDate()) - Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())) / (1000 * 60 * 60 * 24));
+            return diff % interval === 0;
+        };
+
+        // --- DASHBOARD (TODAY'S WORK) ---
         const renderTodayTasks = () => {
             const grid = document.getElementById('today-task-grid');
             const noTasksEl = document.getElementById('no-tasks-today');
+            const workerFilter = document.getElementById('dashboard-worker-filter').value;
+            
             grid.innerHTML = '';
             let hasPending = false;
+            
+            const realToday = new Date(); realToday.setHours(0,0,0,0);
+            const viewTarget = new Date(State.viewingDate); viewTarget.setHours(0,0,0,0);
+            const isViewingPast = viewTarget < realToday; // If true, make incomplete tasks RED (Overdue)
+
+            // Setup Header Text
+            let headerText = "Tasks Pending for " + State.viewingDate.toLocaleDateString();
+            if(viewTarget.getTime() === realToday.getTime()) headerText = "Tasks Pending for Today";
+            document.getElementById('today-view-header').innerText = headerText;
+
+            // Setup Subtext based on Role
+            const role = State.user.role.toLowerCase();
+            const subtext = document.getElementById('today-view-subtext');
+            if (role === 'staff') subtext.innerText = "Read-Only View. You do not have permission to log tasks.";
+            else subtext.innerText = "Tap a box to log a task completion.";
 
             State.rooms.forEach(room => {
                 room.tasks.forEach(task => {
-                    // Filter: Skip tasks not assigned to the logged-in worker (Admins see all)
-                    if (State.user.role.toLowerCase() !== 'admin' && String(task.assignedTo).toLowerCase() !== String(State.user.username).toLowerCase()) {
-                        return; // Skip this iteration
-                    }
+                    // Filter by Worker Dropdown
+                    if (workerFilter !== 'all' && String(task.assignedTo) !== workerFilter) return;
 
-                    // Check if the task is due on the currently viewed date
-                    if (isTaskDueOnDate(task.id, task, State.viewingDate)) {
-                        const completions = getCompletionsOnDate(task.id, State.viewingDate);
+                    // Filter by Role Hard-Lock (Workers only see their own tasks unless specifically overridden)
+                    if (role === 'worker' && String(task.assignedTo) !== State.user.username) return;
+
+                    if (isTaskDueOnDate(task, State.viewingDate)) {
+                        const completions = State.logs.filter(log => String(log.taskId) === String(task.id) && isSameDate(log.completedAt, State.viewingDate)).length;
+                        
                         if (completions < task.timesPerDay) {
                             hasPending = true;
+                            const isOverdue = isViewingPast; // It's incomplete and in the past
+                            
                             const card = document.createElement('div');
-                            // Added hover lift, larger shadow, and shiny-effect
-                            card.className = `cursor-pointer transform transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 hover:shadow-lg border-2 rounded-xl p-5 border-amber-400 bg-amber-50 shiny-effect`;
-                            card.onclick = () => logTaskComplete(room, task, card);
+                            // Red styling if overdue, otherwise amber
+                            const styleColors = isOverdue ? 'border-red-500 bg-red-50 text-red-800' : 'border-amber-400 bg-amber-50 text-amber-800';
+                            const badgeColors = isOverdue ? 'bg-red-200 text-red-900' : 'bg-amber-200 text-amber-900';
+                            
+                            card.className = `transform transition-all duration-300 hover:scale-[1.02] border-2 rounded-xl p-5 ${styleColors} shiny-effect relative overflow-hidden`;
+                            
+                            if (role !== 'staff') {
+                                card.classList.add('cursor-pointer');
+                                card.onclick = () => logTaskComplete(room, task, card, isOverdue);
+                            }
+
                             card.innerHTML = `
+                                ${isOverdue ? '<div class="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg uppercase">Overdue</div>' : ''}
                                 <div class="flex justify-between items-start mb-3">
                                     <div>
-                                        <h4 class="font-bold text-lg text-amber-800 flex items-center flex-wrap gap-2">
+                                        <h4 class="font-bold text-lg flex items-center gap-2">
                                             ${task.name}
-                                            ${State.user.role.toLowerCase() === 'admin' ? `<span class="bg-amber-200 text-amber-900 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wide"><i data-lucide="user" class="w-3 h-3 inline"></i> ${task.assignedTo || 'Unassigned'}</span>` : ''}
+                                            <span class="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide bg-black/10"><i data-lucide="user" class="w-3 h-3 inline"></i> ${task.assignedTo || 'Any'}</span>
                                         </h4>
-                                        <p class="text-xs text-amber-700/70 font-semibold uppercase tracking-wider">${room.name}</p>
+                                        <p class="text-xs font-semibold uppercase tracking-wider opacity-70">${room.name}</p>
                                     </div>
-                                    <span class="bg-amber-200 text-amber-800 text-xs px-2 py-1 rounded-md font-bold">${completions}/${task.timesPerDay} Done</span>
+                                    <span class="${badgeColors} text-xs px-2 py-1 rounded-md font-bold mt-1">${completions}/${task.timesPerDay} Done</span>
                                 </div>
-                                <div class="mt-4 pt-3 border-t border-amber-200 flex items-center justify-between">
-                                     <span class="text-xs font-semibold text-amber-700 opacity-70">Click to log</span>
-                                     <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm border border-amber-200">
-                                        <i data-lucide="check" class="w-4 h-4 text-amber-600 opacity-50"></i>
+                                <div class="mt-4 pt-3 border-t border-black/10 flex items-center justify-between">
+                                     <span class="text-xs font-semibold opacity-70">${role === 'staff' ? 'Read-Only' : 'Click to log'}</span>
+                                     <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm border border-black/10">
+                                        <i data-lucide="${role === 'staff' ? 'lock' : 'check'}" class="w-4 h-4 opacity-50"></i>
                                      </div>
                                 </div>
                             `;
@@ -648,56 +758,49 @@
             lucide.createIcons();
         };
 
-        const logTaskComplete = async (room, task, cardElement) => {
-            // Visual feedback first
-            cardElement.className = `transform transition-all duration-500 border-2 rounded-xl p-5 border-emerald-400 bg-emerald-50 scale-95 opacity-50 shiny-effect`;
+        const logTaskComplete = async (room, task, cardElement, isOverdue) => {
+            // Visual transition
+            cardElement.className = `transform transition-all duration-500 border-2 rounded-xl p-5 border-emerald-400 bg-emerald-50 scale-95 opacity-50`;
+            const iconWrapper = cardElement.querySelector('.w-8');
+            if (iconWrapper) iconWrapper.classList.replace('bg-white', 'bg-emerald-500');
             
-            // Generate timestamp reflecting the currently viewed date
             const now = new Date();
             const viewDate = new Date(State.viewingDate);
-            if (!isSameDate(now, viewDate)) {
-                // If logging for a past date, use that date but append the current time so it's a valid timestamp
-                viewDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
-            } else {
-                viewDate.setTime(now.getTime());
-            }
+            if (!isSameDate(now, viewDate)) viewDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+            else viewDate.setTime(now.getTime());
 
             const logEntry = {
                 LogID: "LOG_" + Date.now(), RoomID: room.id, TaskID: task.id, 
                 CompletedBy: State.user.username, CompletedAt: viewDate.toISOString()
             };
 
-            // API Call
             const res = await apiCall({ action: 'addLog', log: logEntry });
             if (res.success) {
-                // Update local state
                 State.logs.unshift({
                     id: logEntry.LogID, roomId: room.id, roomName: room.name,
                     taskId: task.id, taskName: task.name,
                     completedBy: logEntry.CompletedBy, completedAt: logEntry.CompletedAt
                 });
-                showToast(`Recorded completion for '${task.name}'.`);
+                showToast(`Task logged.`);
                 setTimeout(() => renderTodayTasks(), 300);
             } else {
-                alert("Failed to save to database.");
-                renderTodayTasks(); // revert UI
+                alert("Failed to save.");
+                renderTodayTasks(); 
             }
         };
 
+        // --- ROOMS & TASKS MANAGEMENT (ADMIN) ---
         const renderRoomCards = () => {
             const grid = document.getElementById('admin-task-grid');
             grid.innerHTML = '';
             State.rooms.forEach(room => {
                 const card = document.createElement('div');
-                // Added hover lift and shiny-effect
-                card.className = "bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer group flex flex-col justify-between min-h-[140px] shiny-effect";
+                card.className = "bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between min-h-[140px] shiny-effect";
                 card.onclick = () => openRoomDetailsModal(room);
                 card.innerHTML = `
                     <div>
                         <div class="flex justify-between items-start mb-2">
-                            <h4 class="font-bold text-gray-800 text-lg flex items-center gap-2">
-                                <i data-lucide="layout" class="w-5 h-5 text-gray-400"></i> ${room.name}
-                            </h4>
+                            <h4 class="font-bold text-gray-800 text-lg flex items-center gap-2"><i data-lucide="layout" class="w-5 h-5 text-gray-400"></i> ${room.name}</h4>
                             <button onclick="event.stopPropagation(); openRoomModal('${room.id}')" class="text-gray-400 hover:text-blue-600 p-1 z-10"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
                         </div>
                         <p class="text-sm text-gray-500 mt-2">${room.tasks.length} tasks configured</p>
@@ -708,53 +811,6 @@
             lucide.createIcons();
         };
 
-        // --- Filtering Reports ---
-        const filterReports = () => {
-            const type = document.getElementById('report-range-filter').value;
-            const dateStr = document.getElementById('report-date-filter').value;
-            let filtered = [...State.logs];
-            
-            if (type === 'daily' && dateStr) {
-                const target = new Date(dateStr);
-                filtered = filtered.filter(l => {
-                    const d = new Date(l.completedAt);
-                    return d.getDate() === target.getDate() && d.getMonth() === target.getMonth() && d.getFullYear() === target.getFullYear();
-                });
-            } else if (type === 'monthly') {
-                const now = new Date();
-                filtered = filtered.filter(l => new Date(l.completedAt).getMonth() === now.getMonth() && new Date(l.completedAt).getFullYear() === now.getFullYear());
-            } else if (type === 'yearly') {
-                filtered = filtered.filter(l => new Date(l.completedAt).getFullYear() === new Date().getFullYear());
-            }
-            // Add Quarterly logic similarly if strictly needed...
-            
-            const tbody = document.getElementById('reports-table-body');
-            const noLogs = document.getElementById('no-logs');
-            tbody.innerHTML = '';
-
-            if (filtered.length === 0) {
-                tbody.parentElement.parentElement.classList.add('hidden');
-                noLogs.classList.remove('hidden');
-                return;
-            }
-
-            tbody.parentElement.parentElement.classList.remove('hidden');
-            noLogs.classList.add('hidden');
-
-            filtered.forEach(log => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-50 border-b border-gray-100";
-                tr.innerHTML = `
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900">${log.roomName}</td>
-                    <td class="px-6 py-4 text-sm text-gray-700">${log.taskName}</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">${log.completedBy}</td>
-                    <td class="px-6 py-4 text-sm text-gray-500">${formatDate(log.completedAt)}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        };
-
-        // --- Room Management API Calls ---
         const openRoomModal = (roomId = null) => {
             const room = roomId ? State.rooms.find(r => String(r.id) === String(roomId)) : null;
             document.getElementById('room-modal-title').innerText = room ? 'Edit Room' : 'Add Room Card';
@@ -774,54 +830,27 @@
         document.getElementById('room-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('room-id').value;
-            const name = document.getElementById('room-name').value.trim();
-            const payload = { RoomID: id || "ROOM_" + Date.now(), RoomName: name };
-
+            const payload = { RoomID: id || "ROOM_" + Date.now(), RoomName: document.getElementById('room-name').value.trim() };
             toggleLoader(true, 'Saving...');
             const res = await apiCall({ action: 'saveRoom', isEdit: !!id, room: payload });
-            if (res.success) {
-                await fetchAppData(); // Refresh all state
-                closeRoomModal();
-                showToast('Room saved.');
-            }
+            if (res.success) { await fetchAppData(); closeRoomModal(); }
             toggleLoader(false);
         });
-
         const deleteRoom = async () => {
-            const id = document.getElementById('room-id').value;
-            if (!confirm("Delete this room and all its tasks from the database?")) return;
-            
+            if (!confirm("Delete this room and tasks?")) return;
             toggleLoader(true, 'Deleting...');
-            const res = await apiCall({ action: 'deleteRoom', roomId: id });
-            if(res.success){
-                await fetchAppData();
-                closeRoomModal();
-                showToast('Room deleted.');
-            }
+            const res = await apiCall({ action: 'deleteRoom', roomId: document.getElementById('room-id').value });
+            if(res.success){ await fetchAppData(); closeRoomModal(); }
             toggleLoader(false);
         };
 
-        // --- Room Details & Task Management API Calls ---
         const openRoomDetailsModal = (room) => {
             State.activeRoomId = room.id;
             document.getElementById('detail-room-name').innerText = room.name;
-            renderTasksInsideRoom(room);
-            document.getElementById('room-details-modal').classList.remove('hidden');
-        };
-        const closeRoomDetailsModal = () => {
-            State.activeRoomId = null;
-            document.getElementById('room-details-modal').classList.add('hidden');
-            if(State.currentView === 'today') renderTodayTasks(); 
-            if(State.currentView === 'admin') renderRoomCards();
-        };
-
-        const renderTasksInsideRoom = (room) => {
             const list = document.getElementById('room-tasks-list');
             list.innerHTML = '';
-            if (room.tasks.length === 0) {
-                list.innerHTML = '<p class="text-gray-500 text-center py-4 border-2 border-dashed border-gray-200 rounded-xl">No tasks added to this room yet.</p>';
-                return;
-            }
+            if (room.tasks.length === 0) list.innerHTML = '<p class="text-gray-500 text-center py-4">No tasks added.</p>';
+            
             room.tasks.forEach(task => {
                 const el = document.createElement('div');
                 el.className = "flex justify-between items-center bg-white border border-gray-200 p-4 rounded-xl shadow-sm";
@@ -829,12 +858,8 @@
                     <div>
                         <h5 class="font-bold text-gray-800">${task.name}</h5>
                         <p class="text-sm text-gray-500 flex gap-4 mt-1 flex-wrap">
-                            <span>${task.timesPerDay}x/day</span>
-                            <span>Every ${task.intervalDays} day(s)</span>
-                            <span class="text-gray-400">|</span>
-                            <span>${task.type}</span>
-                            <span class="text-gray-400">|</span>
-                            <span><i data-lucide="user" class="w-3 h-3 inline"></i> ${task.assignedTo || 'Unassigned'}</span>
+                            <span>${task.timesPerDay}x/day | Interval: ${task.intervalDays}</span>
+                            <span>Assigned: ${task.assignedTo || 'Any'}</span>
                         </p>
                     </div>
                     <button onclick="openTaskModal('${task.id}')" class="text-gray-400 hover:text-blue-600 bg-gray-50 p-2 rounded-lg"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
@@ -842,16 +867,18 @@
                 list.appendChild(el);
             });
             lucide.createIcons();
+            document.getElementById('room-details-modal').classList.remove('hidden');
         };
+        const closeRoomDetailsModal = () => { State.activeRoomId = null; document.getElementById('room-details-modal').classList.add('hidden'); renderRoomCards(); };
 
         const openTaskModal = (taskId = null) => {
             const room = State.rooms.find(r => String(r.id) === String(State.activeRoomId));
             const task = taskId ? room.tasks.find(t => String(t.id) === String(taskId)) : null;
             
-            // Populate the "Assigned To" Dropdown dynamically
+            // Populate Assigne To Dropdown
             const assignedSelect = document.getElementById('task-assigned-to');
-            assignedSelect.innerHTML = '<option value="">Select Worker...</option>';
-            State.users.filter(u => String(u.Role).toLowerCase() !== 'admin').forEach(u => {
+            assignedSelect.innerHTML = '<option value="">Any Worker</option>';
+            State.users.filter(u => u.Role.toLowerCase() !== 'staff').forEach(u => {
                 assignedSelect.innerHTML += `<option value="${u.Username}">${u.Username}</option>`;
             });
 
@@ -861,21 +888,14 @@
                 document.getElementById('task-name').value = task.name;
                 document.getElementById('task-frequency').value = task.timesPerDay;
                 document.getElementById('task-interval').value = task.intervalDays;
-                
-                // Format the start date for the HTML date input
-                const sDate = task.startDate ? new Date(task.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
-                document.getElementById('task-start-date').value = sDate;
-                
+                document.getElementById('task-start-date').value = task.startDate ? task.startDate.split('T')[0] : new Date().toISOString().split('T')[0];
                 document.getElementById('task-type').value = task.type;
                 document.getElementById('task-assigned-to').value = task.assignedTo || '';
                 document.getElementById('btn-delete-task').classList.remove('hidden');
             } else {
                 document.getElementById('task-form').reset();
                 document.getElementById('task-id').value = '';
-                document.getElementById('task-frequency').value = '1';
-                document.getElementById('task-interval').value = '1';
                 document.getElementById('task-start-date').value = new Date().toISOString().split('T')[0];
-                document.getElementById('task-assigned-to').value = '';
                 document.getElementById('btn-delete-task').classList.add('hidden');
             }
             document.getElementById('task-modal').classList.remove('hidden');
@@ -884,9 +904,8 @@
 
         document.getElementById('task-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const id = document.getElementById('task-id').value;
             const payload = {
-                TaskID: id || "TASK_" + Date.now(),
+                TaskID: document.getElementById('task-id').value || "TASK_" + Date.now(),
                 RoomID: State.activeRoomId,
                 TaskName: document.getElementById('task-name').value.trim(),
                 TimesPerDay: parseInt(document.getElementById('task-frequency').value),
@@ -895,35 +914,200 @@
                 TaskType: document.getElementById('task-type').value,
                 AssignedTo: document.getElementById('task-assigned-to').value
             };
-
             toggleLoader(true, 'Saving...');
-            const res = await apiCall({ action: 'saveTask', isEdit: !!id, task: payload });
-            if (res.success) {
-                await fetchAppData(); // Refresh all state
-                const updatedRoom = State.rooms.find(r => String(r.id) === String(State.activeRoomId));
-                renderTasksInsideRoom(updatedRoom);
-                closeTaskModal();
-                showToast('Task saved.');
+            const res = await apiCall({ action: 'saveTask', isEdit: !!document.getElementById('task-id').value, task: payload });
+            if (res.success) { await fetchAppData(); openRoomDetailsModal(State.rooms.find(r=>r.id===State.activeRoomId)); closeTaskModal(); }
+            toggleLoader(false);
+        });
+        const deleteTask = async () => {
+            if (!confirm("Delete task?")) return;
+            toggleLoader(true, 'Deleting...');
+            const res = await apiCall({ action: 'deleteTask', taskId: document.getElementById('task-id').value });
+            if (res.success) { await fetchAppData(); openRoomDetailsModal(State.rooms.find(r=>r.id===State.activeRoomId)); closeTaskModal(); }
+            toggleLoader(false);
+        };
+
+        // --- REPORTS & CSV ---
+        const filterReports = () => {
+            const startStr = document.getElementById('report-start-date').value;
+            const endStr = document.getElementById('report-end-date').value;
+            const worker = document.getElementById('report-worker-filter').value;
+            
+            let filtered = [...State.logs];
+            
+            if (startStr && endStr) {
+                const s = new Date(startStr); s.setHours(0,0,0,0);
+                const e = new Date(endStr); e.setHours(23,59,59,999);
+                filtered = filtered.filter(l => {
+                    const d = new Date(l.completedAt);
+                    return d >= s && d <= e;
+                });
             }
+            
+            if (worker !== 'all') {
+                filtered = filtered.filter(l => String(l.completedBy) === worker);
+            }
+
+            const tbody = document.getElementById('reports-table-body');
+            tbody.innerHTML = '';
+            if (filtered.length === 0) {
+                document.getElementById('no-logs').classList.remove('hidden');
+            } else {
+                document.getElementById('no-logs').classList.add('hidden');
+                filtered.forEach(log => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-50 border-b border-gray-100";
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">${log.roomName}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">${log.taskName}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${log.completedBy}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">${formatDate(log.completedAt)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+            // Store for CSV
+            State.currentFilteredLogs = filtered;
+        };
+
+        const downloadCSV = () => {
+            if (!State.currentFilteredLogs || State.currentFilteredLogs.length === 0) return alert("No data to download.");
+            let csv = "Room,Task Name,Completed By,Date Time\n";
+            State.currentFilteredLogs.forEach(row => {
+                csv += `"${row.roomName}","${row.taskName}","${row.completedBy}","${formatDate(row.completedAt)}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `HK_Report_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+
+        // --- TICKETS SYSTEM ---
+        const renderTickets = () => {
+            const tbody = document.getElementById('tickets-table-body');
+            tbody.innerHTML = '';
+            const isAdmin = State.user.role.toLowerCase() === 'admin';
+            
+            // Staff sees their own, Admin sees all
+            const filtered = isAdmin ? State.tickets : State.tickets.filter(t => t.Name === State.user.username);
+            
+            if (filtered.length === 0) { document.getElementById('no-tickets').classList.remove('hidden'); return; }
+            document.getElementById('no-tickets').classList.add('hidden');
+
+            filtered.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-gray-100";
+                
+                let statusBadge = t.Status === 'Resolved' ? '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">Resolved</span>' : '<span class="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold">Pending</span>';
+                
+                tr.innerHTML = `
+                    <td class="px-6 py-4 text-sm text-gray-500">${formatDate(t.CreatedAt)}</td>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">${t.Name}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">${t.Department} / Cab: ${t.CabinNo}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title="${t.Remarks}">${t.Remarks}</td>
+                    <td class="px-6 py-4">${statusBadge}</td>
+                    <td class="px-6 py-4">
+                        ${(isAdmin && t.Status !== 'Resolved') ? `<button onclick="resolveTicket('${t.TicketID}')" class="text-xs bg-blue-50 text-blue-600 font-bold px-2 py-1 rounded border border-blue-200 hover:bg-blue-100">Resolve</button>` : ''}
+                        ${t.Photo ? `<span class="text-xs text-gray-400 block mt-1"><i data-lucide="image" class="w-3 h-3 inline"></i> Photo attached</span>` : ''}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        };
+
+        const openTicketModal = () => {
+            document.getElementById('ticket-form').reset();
+            document.getElementById('ticket-name').value = State.user.username;
+            document.getElementById('ticket-dept').value = State.user.department || 'N/A';
+            document.getElementById('ticket-cabin').value = State.user.cabin || 'N/A';
+            document.getElementById('ticket-modal').classList.remove('hidden');
+        };
+        const closeTicketModal = () => document.getElementById('ticket-modal').classList.add('hidden');
+
+        document.getElementById('ticket-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            // Simulate photo upload by capturing filename
+            const photoInput = document.getElementById('ticket-photo');
+            const photoVal = photoInput.files.length > 0 ? photoInput.files[0].name : '';
+
+            const payload = {
+                TicketID: "TKT_" + Date.now(),
+                Name: document.getElementById('ticket-name').value,
+                Department: document.getElementById('ticket-dept').value,
+                CabinNo: document.getElementById('ticket-cabin').value,
+                Photo: photoVal,
+                Remarks: document.getElementById('ticket-remarks').value,
+                Status: 'Pending',
+                CreatedAt: new Date().toISOString()
+            };
+
+            toggleLoader(true, 'Submitting Ticket...');
+            const res = await apiCall({ action: 'saveTicket', ticket: payload });
+            if (res.success) { await fetchAppData(); closeTicketModal(); showToast('Ticket Raised.'); }
             toggleLoader(false);
         });
 
-        const deleteTask = async () => {
-            const id = document.getElementById('task-id').value;
-            if (!confirm("Delete this task from the database?")) return;
-            
-            toggleLoader(true, 'Deleting...');
-            const res = await apiCall({ action: 'deleteTask', taskId: id });
-            if (res.success) {
-                await fetchAppData();
-                const updatedRoom = State.rooms.find(r => String(r.id) === String(State.activeRoomId));
-                renderTasksInsideRoom(updatedRoom);
-                closeTaskModal();
-                showToast('Task deleted.');
-            }
+        const resolveTicket = async (id) => {
+            if(!confirm("Mark this ticket as resolved?")) return;
+            toggleLoader(true, 'Updating...');
+            const res = await apiCall({ action: 'updateTicketStatus', ticketId: id, status: 'Resolved' });
+            if (res.success) { await fetchAppData(); }
             toggleLoader(false);
         };
-        
+
+        // --- USER MANAGEMENT (ADMIN ONLY) ---
+        const renderUsers = () => {
+            const tbody = document.getElementById('users-table-body');
+            tbody.innerHTML = '';
+            State.users.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-gray-100 hover:bg-gray-50";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">${u.Username}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">${u.Role}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">${u.Department || '-'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">${u.CabinNo || '-'}</td>
+                    <td class="px-6 py-4 text-sm text-right">
+                        ${u.Username !== State.user.username ? `<button onclick="deleteUser('${u.Username}')" class="text-red-500 hover:text-red-700 p-1"><i data-lucide="trash" class="w-4 h-4"></i></button>` : '<span class="text-xs text-gray-400">Current User</span>'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        };
+
+        const openUserModal = () => { document.getElementById('user-form').reset(); document.getElementById('user-modal').classList.remove('hidden'); };
+        const closeUserModal = () => document.getElementById('user-modal').classList.add('hidden');
+
+        document.getElementById('user-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                Username: document.getElementById('new-username').value.trim(),
+                Password: document.getElementById('new-password').value.trim(),
+                Role: document.getElementById('new-role').value,
+                Department: document.getElementById('new-dept').value.trim(),
+                CabinNo: document.getElementById('new-cabin').value.trim()
+            };
+            toggleLoader(true, 'Creating User...');
+            const res = await apiCall({ action: 'saveUser', user: payload });
+            if (res.success) { await fetchAppData(); closeUserModal(); showToast('User Created.'); }
+            toggleLoader(false);
+        });
+
+        const deleteUser = async (username) => {
+            if(!confirm(`Delete user ${username}?`)) return;
+            toggleLoader(true, 'Deleting User...');
+            const res = await apiCall({ action: 'deleteUser', username: username });
+            if (res.success) { await fetchAppData(); }
+            toggleLoader(false);
+        };
+
         lucide.createIcons();
     </script>
 </body>
