@@ -541,7 +541,11 @@
             if (res.success) {
                 State.user = res.user;
                 document.getElementById('display-worker-name').innerText = res.user.username;
-                document.getElementById('display-worker-role').innerText = res.user.role;
+                
+                // Map legacy 'Worker' role to 'Field Operator' for display
+                let displayRole = res.user.role;
+                if (displayRole.toLowerCase() === 'worker') displayRole = 'Field Operator';
+                document.getElementById('display-worker-role').innerText = displayRole;
                 
                 // Hide/Show Tabs based on Role
                 const role = String(res.user.role).toLowerCase();
@@ -1193,11 +1197,14 @@
             const tbody = document.getElementById('users-table-body');
             tbody.innerHTML = '';
             State.users.forEach(u => {
+                let displayRole = u.Role;
+                if (displayRole.toLowerCase() === 'worker') displayRole = 'Field Operator';
+
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-gray-100 hover:bg-gray-50";
                 tr.innerHTML = `
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">${u.Username}</td>
-                    <td class="px-6 py-4 text-sm text-gray-700">${u.Role}</td>
+                    <td class="px-6 py-4 text-sm text-gray-700">${displayRole}</td>
                     <td class="px-6 py-4 text-sm text-gray-700">${u.Department || '-'}</td>
                     <td class="px-6 py-4 text-sm text-gray-700">${u.CabinNo || '-'}</td>
                     <td class="px-6 py-4 text-sm text-right flex justify-end gap-2">
@@ -1225,8 +1232,11 @@
                 usernameInput.readOnly = false; 
                 usernameInput.classList.remove('bg-gray-100');
                 
+                let editRole = user.Role;
+                if (editRole && editRole.toLowerCase() === 'worker') editRole = 'Field Operator';
+                
                 document.getElementById('new-password').value = user.Password || '';
-                document.getElementById('new-role').value = user.Role || 'Field Operator';
+                document.getElementById('new-role').value = editRole || 'Field Operator';
                 document.getElementById('new-dept').value = user.Department || '';
                 document.getElementById('new-cabin').value = user.CabinNo || '';
                 document.getElementById('user-modal-title').innerText = 'Edit User';
